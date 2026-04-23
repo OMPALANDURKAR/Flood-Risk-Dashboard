@@ -29,29 +29,28 @@ function App() {
     fetchData();
   }, []);
 
-  // 🔥 FINAL FIXED FETCH LOGIC
+  // ✅ Robust fetch (handles both API formats)
   const fetchData = async () => {
     try {
       const dataRes = await API.get('/');
       const statRes = await API.get('/analytics');
 
-      // ✅ Handle BOTH response types (array OR {data: []})
       const floodArray = Array.isArray(dataRes.data)
         ? dataRes.data
         : dataRes.data?.data || [];
 
-      const analyticsData = statRes.data?.data || statRes.data || {};
+      const analyticsData =
+        statRes.data?.data || statRes.data || {};
 
       setFloodData(floodArray);
       setAnalytics(analyticsData);
-
     } catch (error) {
       console.error('API Error:', error);
-      setFloodData([]); // fallback safety
+      setFloodData([]);
     }
   };
 
-  // ✅ Safe filter (prevents crash if not array)
+  // ✅ Safe filtering
   const filteredData = Array.isArray(floodData)
     ? floodData.filter((d) =>
         (d.land_cover || '')
@@ -63,28 +62,34 @@ function App() {
     : [];
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 text-slate-800">
+  <div className="h-screen w-screen flex flex-col overflow-hidden">
 
-      {/* Header */}
+    {/* HEADER (FIXED HEIGHT) */}
+    <div className="h-16 flex items-center px-6 border-b bg-white">
       <Header />
-
-      {/* Main Layout */}
-      <div className="flex flex-1 h-full overflow-hidden">
-
-        {/* Sidebar */}
-        <Sidebar filters={filters} setFilters={setFilters} />
-
-        {/* Map */}
-        <main className="flex-1 h-full">
-          <MapView data={filteredData} />
-        </main>
-
-        {/* Analytics */}
-        <AnalyticsPanel analytics={analytics} />
-
-      </div>
     </div>
-  );
+
+    {/* MAIN DASHBOARD */}
+    <div className="flex flex-1 overflow-hidden">
+
+      {/* SIDEBAR */}
+      <div className="w-72 border-r bg-white overflow-y-auto">
+        <Sidebar filters={filters} setFilters={setFilters} />
+      </div>
+
+      {/* MAP (CENTER) */}
+      <div className="flex-1 relative">
+        <MapView data={filteredData} />
+      </div>
+
+      {/* ANALYTICS */}
+      <div className="w-80 border-l bg-white overflow-y-auto">
+        <AnalyticsPanel analytics={analytics} />
+      </div>
+
+    </div>
+  </div>
+);
 }
 
 export default App;

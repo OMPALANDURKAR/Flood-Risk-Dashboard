@@ -8,7 +8,7 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// ✅ Fix Leaflet default icons (Vite compatible)
+// ✅ Fix Leaflet marker icons (Vite)
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -21,29 +21,26 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// 🎨 Risk color mapping
+// 🎨 Risk colors
 const getRiskColor = (risk) => {
-  switch (risk) {
-    case 'High':
-      return '#ef4444';
-    case 'Medium':
-      return '#fbbf24';
-    default:
-      return '#10b981';
-  }
+  if (risk === 'High') return '#ef4444';
+  if (risk === 'Medium') return '#fbbf24';
+  return '#10b981';
 };
 
 export default function MapView({ data = [] }) {
   return (
-    <div className="w-full h-full relative">
-      
+    // 🔥 FORCE HEIGHT (CRITICAL FIX)
+    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
+
       <MapContainer
-        center={[20.5937, 78.9629]} // India center
+        center={[20.5937, 78.9629]}
         zoom={5}
         scrollWheelZoom={true}
-        className="w-full h-full"
+        // 🔥 DO NOT rely on Tailwind here
+        style={{ width: '100%', height: '100%' }}
       >
-        {/* 🌍 Map tiles */}
+        {/* 🌍 Base Map */}
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           attribution="&copy; Carto"
@@ -54,8 +51,8 @@ export default function MapView({ data = [] }) {
           const lat = Number(point.latitude);
           const lng = Number(point.longitude);
 
-          // Skip invalid points
-          if (!lat || !lng) return null;
+          // ❗ Allow 0 coordinates (don’t block valid 0)
+          if (isNaN(lat) || isNaN(lng)) return null;
 
           return (
             <CircleMarker
@@ -70,16 +67,12 @@ export default function MapView({ data = [] }) {
               }}
             >
               <Popup>
-                <div className="text-sm leading-relaxed">
+                <div style={{ fontSize: '13px', lineHeight: '1.5' }}>
                   <strong>Risk Level:</strong> {point.riskLevel}<br />
-
                   <strong>Rainfall:</strong> {point.rainfall_mm} mm<br />
-
                   <strong>Water Level:</strong> {point.water_level} m<br />
-
                   <strong>Discharge:</strong> {point.river_discharge} m³/s<br />
-
-                  <strong>Historical Floods:</strong> {point.historical_floods}
+                  <strong>Flood History:</strong> {point.historical_floods}
                 </div>
               </Popup>
             </CircleMarker>
@@ -88,21 +81,36 @@ export default function MapView({ data = [] }) {
       </MapContainer>
 
       {/* 📊 Legend */}
-      <div className="absolute bottom-6 right-6 bg-white px-4 py-3 rounded-lg shadow-lg border text-xs font-semibold text-slate-700 flex items-center gap-4 z-[1000]">
-        <span className="tracking-wide">RISK</span>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '20px',
+          right: '20px',
+          background: '#ffffff',
+          padding: '10px 14px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+          fontSize: '12px',
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'center',
+          zIndex: 1000
+        }}
+      >
+        <span><strong>RISK</strong></span>
 
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%' }}></div>
           <span>High</span>
         </div>
 
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-amber-400 rounded-full"></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ width: '10px', height: '10px', background: '#fbbf24', borderRadius: '50%' }}></div>
           <span>Medium</span>
         </div>
 
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }}></div>
           <span>Low</span>
         </div>
       </div>

@@ -1,19 +1,34 @@
 const floodService = require('../services/floodService');
 
-exports.getFloodData = (req, res) => {
+// GET /api/floods
+exports.getFloodData = async (req, res, next) => {
     try {
-        const data = floodService.getAllDistrictData();
-        res.status(200).json(data);
+        const data = await floodService.getAllDistrictData();
+
+        res.status(200).json({
+            success: true,
+            count: data.length,
+            data
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Error reading JSON data" });
+        console.error('Error in getFloodData:', error);
+        next(error); // pass to global error handler
     }
 };
 
-exports.getDashboardAnalytics = (req, res) => {
+// GET /api/floods/analytics
+exports.getDashboardAnalytics = async (req, res, next) => {
     try {
-        const stats = floodService.getAnalytics();
-        res.status(200).json(stats);
+        const stats = await floodService.getAnalytics();
+
+        res.status(200).json({
+            success: true,
+            data: stats
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Error generating analytics" });
+        console.error('Error in getDashboardAnalytics:', error);
+        next(error); // pass to global error handler
     }
 };

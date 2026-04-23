@@ -1,47 +1,112 @@
 import React from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import {
+  MapContainer,
+  TileLayer,
+  CircleMarker,
+  Popup
+} from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
+// ✅ Fix Leaflet default icons (Vite compatible)
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+// 🎨 Risk color mapping
 const getRiskColor = (risk) => {
-  if (risk === 'High') return '#ef4444'; // Red
-  if (risk === 'Medium') return '#fbbf24'; // Yellow
-  return '#10b981'; // Green
+  switch (risk) {
+    case 'High':
+      return '#ef4444';
+    case 'Medium':
+      return '#fbbf24';
+    default:
+      return '#10b981';
+  }
 };
 
-export default function MapView({ data }) {
+export default function MapView({ data = [] }) {
   return (
-    <MapContainer center={[20.5937, 78.9629]} zoom={5} className="w-full h-full z-0">
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://carto.com/">Carto</a>'
-      />
-      {data.map((district) => (
-        <CircleMarker
-          key={district.id}
-          center={[district.lat, district.lng]}
-          radius={8}
-          pathOptions={{ 
-            fillColor: getRiskColor(district.riskLevel), 
-            color: 'white', 
-            weight: 2, 
-            fillOpacity: 0.9 
-          }}
-        >
-          <Popup className="font-sans">
-            <strong className="text-base">{district.district}</strong><br/>
-            <span className="text-xs text-slate-500">Risk:</span> {district.riskLevel}<br/>
-            <span className="text-xs text-slate-500">Rainfall:</span> {district.rainfall_mm} mm<br/>
-            <span className="text-xs text-slate-500">Historical Floods:</span> {district.historical_floods}
-          </Popup>
-        </CircleMarker>
-      ))}
+    <div className="w-full h-full relative">
+      
+      <MapContainer
+        center={[20.5937, 78.9629]} // India center
+        zoom={5}
+        scrollWheelZoom={true}
+        className="w-full h-full"
+      >
+        {/* 🌍 Map tiles */}
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution="&copy; Carto"
+        />
 
-      {/* Map Legend Floating Container */}
-      <div className="absolute bottom-6 right-6 bg-white p-3 rounded-md shadow-lg z-[1000] border border-slate-100 flex items-center space-x-4 text-xs font-bold text-slate-600">
-        <span className="tracking-wider">ACTIVE INDEX</span>
-        <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-red-500 rounded-full"/><span>HIGH</span></div>
-        <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-amber-400 rounded-full"/><span>MED</span></div>
-        <div className="flex items-center space-x-1"><div className="w-3 h-3 bg-emerald-500 rounded-full"/><span>LOW</span></div>
+        {/* 📍 Markers */}
+        {data.map((point, index) => {
+          const lat = Number(point.latitude);
+          const lng = Number(point.longitude);
+
+          // Skip invalid points
+          if (!lat || !lng) return null;
+
+          return (
+            <CircleMarker
+              key={`${lat}-${lng}-${index}`}
+              center={[lat, lng]}
+              radius={6}
+              pathOptions={{
+                fillColor: getRiskColor(point.riskLevel),
+                color: '#ffffff',
+                weight: 1.5,
+                fillOpacity: 0.85,
+              }}
+            >
+              <Popup>
+                <div className="text-sm leading-relaxed">
+                  <strong>Risk Level:</strong> {point.riskLevel}<br />
+
+                  <strong>Rainfall:</strong> {point.rainfall_mm} mm<br />
+
+                  <strong>Water Level:</strong> {point.water_level} m<br />
+
+                  <strong>Discharge:</strong> {point.river_discharge} m³/s<br />
+
+                  <strong>Historical Floods:</strong> {point.historical_floods}
+                </div>
+              </Popup>
+            </CircleMarker>
+          );
+        })}
+      </MapContainer>
+
+      {/* 📊 Legend */}
+      <div className="absolute bottom-6 right-6 bg-white px-4 py-3 rounded-lg shadow-lg border text-xs font-semibold text-slate-700 flex items-center gap-4 z-[1000]">
+        <span className="tracking-wide">RISK</span>
+
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+          <span>High</span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-amber-400 rounded-full"></div>
+          <span>Medium</span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+          <span>Low</span>
+        </div>
       </div>
-    </MapContainer>
+
+    </div>
   );
 }

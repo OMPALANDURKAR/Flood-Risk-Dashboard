@@ -1,0 +1,45 @@
+/* ===== GLOBAL RESET (CRITICAL FOR LAYOUT) ===== */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== OPTIONAL: SMOOTH FONT RENDERING ===== */
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== ENSURE FULL HEIGHT CONTAINERS ===== */
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== MAP FIX (LEAFLET) ===== */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== SCROLLBAR (OPTIONAL CLEAN LOOK) ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===== REMOVE DEFAULT LINK STYLES (SAFE) ===== */
+a {
+  text-decoration: none;
+  color: inherit;
+}

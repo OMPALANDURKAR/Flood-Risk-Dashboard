@@ -6,7 +6,7 @@ import MapView from './components/MapView';
 import AnalyticsPanel from './components/AnalyticsPanel';
 import 'leaflet/dist/leaflet.css';
 
-// Axios instance (clean base config)
+// Axios instance
 const API = axios.create({
   baseURL: 'http://localhost:5000/api/floods'
 });
@@ -29,49 +29,64 @@ function App() {
     fetchData();
   }, []);
 
-  // Fetch API data
+  // ✅ Robust API handling (handles both formats)
   const fetchData = async () => {
     try {
       const dataRes = await API.get('/');
       const statRes = await API.get('/analytics');
 
-      // Backend returns { success, data }
-      setFloodData(dataRes.data.data);
-      setAnalytics(statRes.data.data);
+      const floodArray = Array.isArray(dataRes.data)
+        ? dataRes.data
+        : dataRes.data?.data || [];
+
+      const analyticsData =
+        statRes.data?.data || statRes.data || {};
+
+      setFloodData(floodArray);
+      setAnalytics(analyticsData);
 
     } catch (error) {
       console.error('Error fetching data:', error);
+      setFloodData([]);
     }
   };
 
-  // Filtering logic (UPDATED for your dataset)
-  const filteredData = floodData.filter(d =>
-    // No district → use land_cover or soil_type as searchable
-    (d.land_cover || '').toLowerCase().includes(filters.search.toLowerCase()) &&
-
-    (filters.risk === 'All' || d.riskLevel === filters.risk) &&
-
-    d.rainfall_mm <= filters.rainfall
-  );
+  // ✅ Safe filtering (no crashes)
+  const filteredData = Array.isArray(floodData)
+    ? floodData.filter((d) =>
+        (d.land_cover || '')
+          .toLowerCase()
+          .includes(filters.search.toLowerCase()) &&
+        (filters.risk === 'All' || d.riskLevel === filters.risk) &&
+        Number(d.rainfall_mm) <= filters.rainfall
+      )
+    : [];
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 font-sans text-slate-800">
-      
-      {/* Header */}
-      <Header />
+    <div className="h-screen w-screen flex flex-col overflow-hidden">
 
-      <div className="flex flex-1 overflow-hidden">
-        
-        {/* Sidebar */}
-        <Sidebar filters={filters} setFilters={setFilters} />
+      {/* ===== HEADER ===== */}
+      <header className="h-16 flex-shrink-0 border-b bg-white z-10">
+        <Header />
+      </header>
 
-        {/* Map */}
-        <main className="flex-1 relative bg-blue-50">
+      {/* ===== MAIN LAYOUT ===== */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+
+        {/* ===== SIDEBAR ===== */}
+        <aside className="w-72 flex-shrink-0 overflow-y-auto border-r bg-white">
+          <Sidebar filters={filters} setFilters={setFilters} />
+        </aside>
+
+        {/* ===== MAP (CRITICAL FIX AREA) ===== */}
+        <main className="flex-1 min-h-0 relative">
           <MapView data={filteredData} />
         </main>
 
-        {/* Analytics */}
-        <AnalyticsPanel analytics={analytics} />
+        {/* ===== ANALYTICS ===== */}
+        <aside className="w-80 flex-shrink-0 overflow-y-auto border-l bg-white">
+          <AnalyticsPanel analytics={analytics} />
+        </aside>
 
       </div>
     </div>

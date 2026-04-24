@@ -29,7 +29,7 @@ function App() {
     fetchData();
   }, []);
 
-  // ✅ Robust fetch (handles both API formats)
+  // ✅ Robust fetch
   const fetchData = async () => {
     try {
       const dataRes = await API.get('/');
@@ -62,34 +62,34 @@ function App() {
     : [];
 
   return (
-  <div className="h-screen w-screen flex flex-col overflow-hidden">
+    <div className="h-screen w-screen flex flex-col overflow-hidden">
 
-    {/* HEADER (FIXED HEIGHT) */}
-    <div className="h-16 flex items-center px-6 border-b bg-white">
-      <Header />
+      {/* ===== HEADER ===== */}
+      <div className="h-16 flex items-center px-6 border-b bg-white flex-shrink-0">
+        <Header />
+      </div>
+
+      {/* ===== MAIN DASHBOARD ===== */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+
+        {/* ===== SIDEBAR ===== */}
+        <div className="w-72 border-r bg-white overflow-y-auto flex-shrink-0">
+          <Sidebar filters={filters} setFilters={setFilters} />
+        </div>
+
+        {/* ===== MAP (CENTER) ===== */}
+        <div className="flex-1 min-h-0">
+          <MapView data={filteredData} />
+        </div>
+
+        {/* ===== ANALYTICS ===== */}
+        <div className="w-80 border-l bg-white overflow-y-auto flex-shrink-0">
+          <AnalyticsPanel analytics={analytics} />
+        </div>
+
+      </div>
     </div>
-
-    {/* MAIN DASHBOARD */}
-    <div className="flex flex-1 overflow-hidden">
-
-      {/* SIDEBAR */}
-      <div className="w-72 border-r bg-white overflow-y-auto">
-        <Sidebar filters={filters} setFilters={setFilters} />
-      </div>
-
-      {/* MAP (CENTER) */}
-      <div className="flex-1 relative">
-        <MapView data={filteredData} />
-      </div>
-
-      {/* ANALYTICS */}
-      <div className="w-80 border-l bg-white overflow-y-auto">
-        <AnalyticsPanel analytics={analytics} />
-      </div>
-
-    </div>
-  </div>
-);
+  );
 }
 
 export default App;

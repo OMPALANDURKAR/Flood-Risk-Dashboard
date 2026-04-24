@@ -2,33 +2,43 @@ import React from 'react';
 import { Search } from 'lucide-react';
 
 export default function Sidebar({ filters, setFilters }) {
-  return (
-    <aside className="w-72 bg-white border-r border-slate-200 p-5 overflow-y-auto z-10 flex flex-col gap-6">
+  const handleChange = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value
+    }));
+  };
 
-      {/* Search (Updated for dataset) */}
+  return (
+    <aside className="w-72 flex-shrink-0 bg-white border-r border-slate-200 p-5 overflow-y-auto flex flex-col gap-6">
+
+      {/* ===== SEARCH ===== */}
       <div>
-        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-3">SEARCH (LAND / SOIL)</h3>
+        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-3">
+          SEARCH (LAND / SOIL)
+        </h3>
+
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-          <input 
+
+          <input
             type="text"
             placeholder="e.g. Forest, Clay"
             className="w-full border border-slate-200 rounded-md pl-9 py-2 text-sm focus:outline-none focus:border-blue-500"
             value={filters.search}
-            onChange={(e) =>
-              setFilters({ ...filters, search: e.target.value })
-            }
+            onChange={(e) => handleChange('search', e.target.value)}
           />
         </div>
       </div>
 
-      {/* Risk Level */}
+      {/* ===== RISK LEVEL ===== */}
       <div>
-        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-3">RISK LEVEL</h3>
+        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-3">
+          RISK LEVEL
+        </h3>
 
         <div className="space-y-3 text-sm">
-
-          {['All', 'High', 'Medium', 'Low'].map(level => {
+          {['All', 'High', 'Medium', 'Low'].map((level) => {
             const color =
               level === 'High'
                 ? 'bg-red-500'
@@ -39,30 +49,36 @@ export default function Sidebar({ filters, setFilters }) {
                 : 'bg-slate-300';
 
             return (
-              <label key={level} className="flex items-center justify-between cursor-pointer">
+              <label
+                key={level}
+                className="flex items-center justify-between cursor-pointer"
+              >
                 <div className="flex items-center space-x-3">
                   <input
                     type="radio"
                     name="risk"
                     className="w-4 h-4 accent-slate-900"
                     checked={filters.risk === level}
-                    onChange={() =>
-                      setFilters({ ...filters, risk: level })
-                    }
+                    onChange={() => handleChange('risk', level)}
                   />
-                  <span>{level === 'All' ? 'All Levels' : `${level} Risk`}</span>
+                  <span>
+                    {level === 'All' ? 'All Levels' : `${level} Risk`}
+                  </span>
                 </div>
 
-                <div className={`w-2 h-2 rounded-full ${color}`}></div>
+                <div className={`w-2 h-2 rounded-full ${color}`} />
               </label>
             );
           })}
-
         </div>
 
         <button
           onClick={() =>
-            setFilters({ search: '', risk: 'All', rainfall: 400 })
+            setFilters({
+              search: '',
+              risk: 'All',
+              rainfall: 400
+            })
           }
           className="w-full mt-4 bg-slate-900 text-white text-sm py-2.5 rounded-md hover:bg-slate-800 transition"
         >
@@ -70,9 +86,11 @@ export default function Sidebar({ filters, setFilters }) {
         </button>
       </div>
 
-      {/* Rainfall Filter */}
+      {/* ===== RAINFALL FILTER ===== */}
       <div>
-        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-3">RAINFALL FILTER</h3>
+        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-3">
+          RAINFALL FILTER
+        </h3>
 
         <div className="bg-slate-50 p-3 rounded-md border border-slate-100">
           <div className="flex justify-between text-xs text-slate-500 mb-2">
@@ -89,10 +107,7 @@ export default function Sidebar({ filters, setFilters }) {
             className="w-full accent-blue-600"
             value={filters.rainfall}
             onChange={(e) =>
-              setFilters({
-                ...filters,
-                rainfall: Number(e.target.value) // FIXED
-              })
+              handleChange('rainfall', Number(e.target.value))
             }
           />
         </div>

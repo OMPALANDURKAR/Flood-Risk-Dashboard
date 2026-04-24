@@ -1,54 +1,14 @@
-/* ===== GLOBAL RESET ===== */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* layout fix */
 html, body, #root {
   height: 100%;
   margin: 0;
-  padding: 0;
 }
 
-/* ===== BODY ===== */
-body {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f8fafc; /* light gray */
-  color: #0f172a; /* slate-900 */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* ===== ROOT LAYOUT (CRITICAL FIX) ===== */
-#root {
-  display: flex;
-  flex-direction: column;
-  width: 100%;          /* ✅ FULL WIDTH */
-  height: 100%;
-}
-
-/* ===== HEADINGS ===== */
-h1, h2, h3, h4 {
-  margin: 0;
-  font-weight: 500;
-}
-
-/* ===== PARAGRAPH RESET ===== */
-p {
-  margin: 0;
-}
-
-/* ===== LEAFLET MAP FIX ===== */
 .leaflet-container {
-  width: 100%;
   height: 100%;
-}
-
-/* ===== SCROLLBAR (OPTIONAL CLEAN LOOK) ===== */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
+  width: 100%;
 }

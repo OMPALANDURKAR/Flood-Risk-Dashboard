@@ -1,45 +1,99 @@
+/* ===== THEME VARIABLES (MODERN SLATE) ===== */
+:root {
+  --bg-color: #f8fafc;       /* Slate 50 */
+  --text-main: #0f172a;      /* Slate 900 */
+  --text-muted: #64748b;     /* Slate 500 */
+  --primary-color: #3b82f6;  /* Blue 500 */
+  --scrollbar-bg: transparent;
+  --scrollbar-thumb: #cbd5e1;       /* Slate 300 */
+  --scrollbar-thumb-hover: #94a3b8; /* Slate 400 */
+}
+
 /* ===== GLOBAL RESET (CRITICAL FOR LAYOUT) ===== */
+*, *::before, *::after {
+  box-sizing: border-box; /* Ensures padding doesn't break widths */
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
+  scroll-behavior: smooth;
 }
 
-/* ===== OPTIONAL: SMOOTH FONT RENDERING ===== */
+/* ===== BODY ===== */
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  /* Using Inter if available, falling back to system fonts */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.6;
 }
 
-/* ===== ENSURE FULL HEIGHT CONTAINERS ===== */
+/* Highlight color when dragging text */
+::selection {
+  background-color: var(--primary-color);
+  color: #ffffff;
+}
+
+/* ===== ROOT LAYOUT (CRITICAL FIX) ===== */
 #root {
   display: flex;
   flex-direction: column;
+  min-height: 0; /* 🔥 IMPORTANT: allows map/content to fill remaining space */
 }
 
-/* ===== MAP FIX (LEAFLET) ===== */
+/* ===== FLEX CHILD FIX (MOST IMPORTANT) ===== */
+#root > * {
+  min-height: 0; /* 🔥 allows children (like map) to shrink/expand properly */
+}
+
+/* ===== LEAFLET MAP FIX & ENHANCEMENTS ===== */
 .leaflet-container {
   width: 100%;
   height: 100%;
+  z-index: 1; 
+  background-color: #e2e8f0; /* Looks better while map tiles are loading */
+  font-family: inherit; /* Makes map popups match your app's font */
 }
 
-/* ===== SCROLLBAR (OPTIONAL CLEAN LOOK) ===== */
+/* ===== PREMIUM SCROLLBAR ===== */
 ::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border-radius: 4px;
+  width: 12px; /* Slightly wider track for the padding trick */
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--scrollbar-bg);
 }
 
-/* ===== REMOVE DEFAULT LINK STYLES (SAFE) ===== */
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 99px;
+  /* This creates a transparent "padding" around the scrollbar thumb */
+  border: 3px solid var(--bg-color); 
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ===== LINKS & ACCESSIBILITY ===== */
 a {
   text-decoration: none;
   color: inherit;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+a:hover {
+  color: var(--primary-color);
+}
+
+/* Clean outline for keyboard navigation (Accessibility) */
+:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }

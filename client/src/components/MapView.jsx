@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   MapContainer,
   TileLayer,
   CircleMarker,
-  Popup
+  Popup,
+  useMap
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// ✅ Fix Leaflet marker icons (Vite)
+// ✅ Fix Leaflet icons (Vite)
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -21,7 +22,20 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// 🎨 Risk colors
+// ✅ Force map resize fix (VERY IMPORTANT)
+function FixMapResize() {
+  const map = useMap();
+
+  useEffect(() => {
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 0);
+  }, [map]);
+
+  return null;
+}
+
+// 🎨 Risk color helper
 const getRiskColor = (risk) => {
   if (risk === 'High') return '#ef4444';
   if (risk === 'Medium') return '#fbbf24';
@@ -30,17 +44,18 @@ const getRiskColor = (risk) => {
 
 export default function MapView({ data = [] }) {
   return (
-    // 🔥 FORCE HEIGHT (CRITICAL FIX)
-    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
+    <div className="w-full h-full relative">
 
       <MapContainer
         center={[20.5937, 78.9629]}
         zoom={5}
         scrollWheelZoom={true}
-        // 🔥 DO NOT rely on Tailwind here
-        style={{ width: '100%', height: '100%' }}
+        className="w-full h-full" // ✅ Tailwind safer than inline
       >
-        {/* 🌍 Base Map */}
+        {/* 🔥 Fix for flex layouts */}
+        <FixMapResize />
+
+        {/* 🌍 Base map */}
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           attribution="&copy; Carto"
@@ -51,7 +66,6 @@ export default function MapView({ data = [] }) {
           const lat = Number(point.latitude);
           const lng = Number(point.longitude);
 
-          // ❗ Allow 0 coordinates (don’t block valid 0)
           if (isNaN(lat) || isNaN(lng)) return null;
 
           return (
@@ -67,7 +81,7 @@ export default function MapView({ data = [] }) {
               }}
             >
               <Popup>
-                <div style={{ fontSize: '13px', lineHeight: '1.5' }}>
+                <div className="text-sm leading-relaxed">
                   <strong>Risk Level:</strong> {point.riskLevel}<br />
                   <strong>Rainfall:</strong> {point.rainfall_mm} mm<br />
                   <strong>Water Level:</strong> {point.water_level} m<br />
@@ -81,36 +95,21 @@ export default function MapView({ data = [] }) {
       </MapContainer>
 
       {/* 📊 Legend */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          background: '#ffffff',
-          padding: '10px 14px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-          fontSize: '12px',
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'center',
-          zIndex: 1000
-        }}
-      >
-        <span><strong>RISK</strong></span>
+      <div className="absolute bottom-5 right-5 bg-white px-4 py-2 rounded-lg shadow-md text-xs flex gap-3 items-center z-[1000]">
+        <strong>RISK</strong>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%' }}></div>
+        <div className="flex items-center gap-1">
+          <div className="w-2.5 h-2.5 bg-red-500 rounded-full" />
           <span>High</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '10px', height: '10px', background: '#fbbf24', borderRadius: '50%' }}></div>
+        <div className="flex items-center gap-1">
+          <div className="w-2.5 h-2.5 bg-amber-400 rounded-full" />
           <span>Medium</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%' }}></div>
+        <div className="flex items-center gap-1">
+          <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
           <span>Low</span>
         </div>
       </div>

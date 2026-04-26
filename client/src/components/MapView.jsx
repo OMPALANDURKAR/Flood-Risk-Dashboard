@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -22,7 +22,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// ✅ Force map resize fix (VERY IMPORTANT)
+// ✅ Fix map resize (important for flex layouts)
 function FixMapResize() {
   const map = useMap();
 
@@ -35,14 +35,26 @@ function FixMapResize() {
   return null;
 }
 
-// 🎨 Risk color helper
+// 🎨 Risk color mapping (Bioluminescent Zen style)
 const getRiskColor = (risk) => {
-  if (risk === 'High') return '#ef4444';
-  if (risk === 'Medium') return '#fbbf24';
-  return '#10b981';
+  if (risk === 'High') return '#ef4444';      // red
+  if (risk === 'Medium') return '#fbbf24';    // amber
+  return '#2dd4bf';                           // electric mint (better than green)
 };
 
+// 🎯 Add jitter to avoid grid/block look
+const jitter = () => (Math.random() - 0.5) * 0.08;
+
 export default function MapView({ data = [] }) {
+
+  // 🔥 PERFORMANCE FIX: limit points
+  const MAX_POINTS = 1500;
+
+  const displayData = useMemo(() => {
+    if (!Array.isArray(data)) return [];
+    return data.slice(0, MAX_POINTS);
+  }, [data]);
+
   return (
     <div className="w-full h-full relative">
 
@@ -50,19 +62,18 @@ export default function MapView({ data = [] }) {
         center={[20.5937, 78.9629]}
         zoom={5}
         scrollWheelZoom={true}
-        className="w-full h-full" // ✅ Tailwind safer than inline
+        className="w-full h-full"
       >
-        {/* 🔥 Fix for flex layouts */}
         <FixMapResize />
 
-        {/* 🌍 Base map */}
+        {/* 🌙 DARK MAP (HUGE VISUAL UPGRADE) */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution="&copy; Carto"
         />
 
         {/* 📍 Markers */}
-        {data.map((point, index) => {
+        {displayData.map((point, index) => {
           const lat = Number(point.latitude);
           const lng = Number(point.longitude);
 
@@ -71,22 +82,22 @@ export default function MapView({ data = [] }) {
           return (
             <CircleMarker
               key={`${lat}-${lng}-${index}`}
-              center={[lat, lng]}
-              radius={6}
+              center={[lat + jitter(), lng + jitter()]}
+              radius={4} // 🔥 smaller markers
               pathOptions={{
                 fillColor: getRiskColor(point.riskLevel),
-                color: '#ffffff',
-                weight: 1.5,
-                fillOpacity: 0.85,
+                color: '#0f172a',     // dark outline for contrast
+                weight: 1,
+                fillOpacity: 0.6,     // 🔥 reduce noise
               }}
             >
               <Popup>
                 <div className="text-sm leading-relaxed">
-                  <strong>Risk Level:</strong> {point.riskLevel}<br />
+                  <strong>Risk:</strong> {point.riskLevel}<br />
                   <strong>Rainfall:</strong> {point.rainfall_mm} mm<br />
                   <strong>Water Level:</strong> {point.water_level} m<br />
                   <strong>Discharge:</strong> {point.river_discharge} m³/s<br />
-                  <strong>Flood History:</strong> {point.historical_floods}
+                  <strong>History:</strong> {point.historical_floods}
                 </div>
               </Popup>
             </CircleMarker>
@@ -94,9 +105,9 @@ export default function MapView({ data = [] }) {
         })}
       </MapContainer>
 
-      {/* 📊 Legend */}
-      <div className="absolute bottom-5 right-5 bg-white px-4 py-2 rounded-lg shadow-md text-xs flex gap-3 items-center z-[1000]">
-        <strong>RISK</strong>
+      {/* 📊 MODERN LEGEND */}
+      <div className="absolute bottom-5 right-5 bg-slate-900/80 backdrop-blur-md text-white px-4 py-2 rounded-xl shadow-lg text-xs flex gap-4 items-center border border-slate-700 z-[1000]">
+        <span className="font-semibold tracking-wide">RISK</span>
 
         <div className="flex items-center gap-1">
           <div className="w-2.5 h-2.5 bg-red-500 rounded-full" />
@@ -109,7 +120,7 @@ export default function MapView({ data = [] }) {
         </div>
 
         <div className="flex items-center gap-1">
-          <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
+          <div className="w-2.5 h-2.5 bg-teal-400 rounded-full" />
           <span>Low</span>
         </div>
       </div>

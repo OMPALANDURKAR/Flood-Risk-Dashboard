@@ -2,22 +2,31 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
+
   "dependencies": {
     "axios": "^1.6.0",
-    "csv-parser": "^3.2.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
     "react-scripts": "5.0.1",
-    "recharts": "^2.10.3",
-    "tailwindcss": "^3.3.0"
+    "recharts": "^2.10.3"
   },
+
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.35",
+    "autoprefixer": "^10.4.17"
+  },
+
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
+
   "browserslist": {
     "production": [
       ">0.2%",

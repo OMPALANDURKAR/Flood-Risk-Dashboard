@@ -4,40 +4,91 @@ const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
 
-// File Paths
+// ===== PATHS =====
 const csvFilePath = path.join(__dirname, '../data/raw/dataset.csv');
-const jsonFilePath = path.join(__dirname, '../data/flood_data.json');
+const jsonFilePath = path.join(__dirname, '../data/processed/flood_data.json');
 
+// ===== HELPERS =====
+const toNumber = (val) => {
+  const num = Number(val);
+  return isNaN(num) ? null : num;
+};
+
+const normalizeString = (val, fallback = 'Unknown') => {
+  return val && val.trim() !== '' ? val.trim() : fallback;
+};
+
+// ===== STORAGE =====
 const results = [];
 
 fs.createReadStream(csvFilePath)
-    .pipe(csv())
-    .on('data', (row) => {
-        results.push({
-            latitude: Number(row['Latitude']) || 0,
-            longitude: Number(row['Longitude']) || 0,
-            rainfall_mm: Number(row['Rainfall (mm)']) || 0,
-            water_level: Number(row['Water Level (m)']) || 0,
-            river_discharge: Number(row['River Discharge (m³/s)']) || 0,
-            temperature: Number(row['Temperature (°C)']) || 0,
-            humidity: Number(row['Humidity (%)']) || 0,
-            elevation: Number(row['Elevation (m)']) || 0,
-            land_cover: row['Land Cover'] || 'Unknown',
-            soil_type: row['Soil Type'] || 'Unknown',
-            population_density: Number(row['Population Density']) || 0,
-            infrastructure: Number(row['Infrastructure']) || 0,
-            historical_floods: Number(row['Historical Floods']) || 0,
-            flood_occurred: Number(row['Flood Occurred']) || 0
-        });
-    })
-    .on('end', () => {
-        try {
-            fs.writeFileSync(jsonFilePath, JSON.stringify(results, null, 2));
-            console.log('✅ CSV converted successfully based on dataset structure');
-        } catch (error) {
-            console.error('❌ Error writing JSON:', error);
-        }
-    })
-    .on('error', (error) => {
-        console.error('❌ Error reading CSV:', error);
-    });
+  .pipe(csv())
+  .on('data', (row) => {
+    try {
+      const record = {
+        // 📍 Geo
+        latitude: toNumber(row['Latitude']),
+        longitude: toNumber(row['Longitude']),
+
+        // 🌧 Core Features
+        rainfall_mm: toNumber(row['Rainfall (mm)']),
+        water_level: toNumber(row['Water Level (m)']),
+        river_discharge: toNumber(row['River Discharge (m³/s)']),
+        humidity: toNumber(row['Humidity (%)']),
+        elevation: toNumber(row['Elevation (m)']),
+
+        // 🌍 Categorical
+        land_cover: normalizeString(row['Land Cover']),
+        soil_type: normalizeString(row['Soil Type']),
+
+        // 🏙 Optional
+        population_density: toNumber(row['Population Density']) || 0,
+        infrastructure: toNumber(row['Infrastructure']) || 0,
+
+        // 📊 Target
+        historical_floods: toNumber(row['Historical Floods']) || 0,
+        flood_occurred: toNumber(row['Flood Occurred']) || 0,
+      };
+
+      // ===== VALIDATION (skip bad rows) =====
+      if (
+        record.latitude === null ||
+        record.longitude === null ||
+        record.rainfall_mm === null
+      ) {
+        return; // skip incomplete rows
+      }
+
+      // ===== DERIVED FEATURE (OPTIONAL BUT POWERFUL) =====
+      record.risk_score =
+        (record.rainfall_mm * 0.25) +
+        (record.river_discharge * 0.25) +
+        (record.water_level * 0.20) +
+        (record.humidity * 0.10) -
+        (record.elevation * 0.10) +
+        (record.historical_floods * 0.05) +
+        (record.infrastructure * 0.05);
+
+      results.push(record);
+
+    } catch (err) {
+      console.error('❌ Row processing error:', err.message);
+    }
+  })
+
+  .on('end', () => {
+    try {
+      fs.writeFileSync(jsonFilePath, JSON.stringify(results, null, 2));
+
+      console.log('✅ CSV → JSON conversion complete');
+      console.log(`📊 Total records processed: ${results.length}`);
+      console.log(`📁 Saved to: ${jsonFilePath}`);
+
+    } catch (error) {
+      console.error('❌ Error writing JSON:', error);
+    }
+  })
+
+  .on('error', (error) => {
+    console.error('❌ Error reading CSV:', error);
+  });

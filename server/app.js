@@ -1,38 +1,55 @@
 const express = require('express');
 const cors = require('cors');
 
-// ✅ FIXED: correct route import
 const predictRoutes = require('./routes/predictRoutes');
 
 const app = express();
 
-// ===== MIDDLEWARE =====
+// =======================
+// GLOBAL MIDDLEWARE
+// =======================
 app.use(cors());
 app.use(express.json());
 
-// ===== HEALTH CHECK =====
+// =======================
+// REQUEST LOGGER (DEBUG)
+// =======================
+app.use((req, res, next) => {
+  console.log(`➡️ ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// =======================
+// HEALTH CHECK
+// =======================
 app.get('/health', (req, res) => {
   res.status(200).json({
-    status: 'OK',
+    success: true,
     message: 'FloodSentry API is running 🚀'
   });
 });
 
-// ===== MAIN ROUTES =====
-// ✅ FIXED: correct base route
+// =======================
+// ROUTES
+// =======================
+// FINAL ROUTE → /api/predict
 app.use('/api', predictRoutes);
 
-// ===== 404 HANDLER =====
+// =======================
+// 404 HANDLER
+// =======================
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route ${req.originalUrl} not found`
+    message: `Route ${req.method} ${req.originalUrl} not found`
   });
 });
 
-// ===== GLOBAL ERROR HANDLER =====
+// =======================
+// GLOBAL ERROR HANDLER
+// =======================
 app.use((err, req, res, next) => {
-  console.error('❌ ERROR:', err.stack);
+  console.error('❌ ERROR STACK:', err.stack);
 
   res.status(err.statusCode || 500).json({
     success: false,

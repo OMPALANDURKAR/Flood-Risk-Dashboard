@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, RotateCcw } from 'lucide-react';
 
 export default function Sidebar({ filters, setFilters }) {
   const handleChange = (key, value) => {
@@ -7,53 +7,53 @@ export default function Sidebar({ filters, setFilters }) {
   };
 
   return (
-    <aside className="h-full p-6 flex flex-col gap-8 bg-[#1E293B]/80 backdrop-blur-lg border-r border-[#334155]">
-
-      {/* ===== SEARCH ===== */}
+    <aside className="w-full h-full p-6 flex flex-col gap-8 text-slate-200 overflow-y-auto">
+      
+      {/* Header */}
       <div>
-        <h3 className="text-[11px] font-semibold text-slate-400 tracking-widest mb-3 uppercase">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+          Global Filters
+        </h2>
+        <div className="h-px w-full bg-gradient-to-r from-white/10 to-transparent"></div>
+      </div>
+
+      {/* Search */}
+      <div>
+        <h3 className="text-[10px] font-semibold text-slate-500 tracking-widest mb-3 uppercase">
           Search Regions
         </h3>
-
         <div className="relative group">
-          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 group-focus-within:text-[#2DD4BF] transition" />
-
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors duration-300" />
           <input
             type="text"
-            placeholder="e.g. Forest, Clay"
+            placeholder="e.g. Forest, Clay..."
             value={filters.search}
             onChange={(e) => handleChange('search', e.target.value)}
-            className="w-full bg-[#0F172A] border border-[#334155] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2DD4BF]/30 focus:border-[#2DD4BF] transition-all"
+            className="w-full bg-slate-950/40 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/50 transition-all shadow-inner"
           />
         </div>
       </div>
 
-      {/* ===== RISK LEVEL ===== */}
+      {/* Risk Filter */}
       <div>
-        <h3 className="text-[11px] font-semibold text-slate-400 tracking-widest mb-3 uppercase">
-          Risk Level Filter
+        <h3 className="text-[10px] font-semibold text-slate-500 tracking-widest mb-3 uppercase">
+          Risk Level
         </h3>
-
-        <div className="space-y-2 bg-[#0F172A] p-2 rounded-xl border border-[#334155]">
+        <div className="space-y-1.5 bg-slate-950/30 p-2 rounded-2xl border border-white/5 shadow-inner">
           {['All', 'High', 'Medium', 'Low'].map((level) => {
             const active = filters.risk === level;
-
-            const color =
-              level === 'High'
-                ? 'bg-red-500'
-                : level === 'Medium'
-                ? 'bg-amber-400'
-                : level === 'Low'
-                ? 'bg-emerald-400'
-                : 'bg-slate-500';
+            
+            let colorClass = 'bg-slate-600 shadow-[0_0_8px_rgba(71,85,105,0.5)]';
+            if (level === 'High') colorClass = 'bg-[#ef4444] shadow-[0_0_12px_rgba(239,68,68,0.8)]';
+            if (level === 'Medium') colorClass = 'bg-[#fbbf24] shadow-[0_0_12px_rgba(251,191,36,0.8)]';
+            if (level === 'Low') colorClass = 'bg-[#2dd4bf] shadow-[0_0_12px_rgba(45,212,191,0.8)]';
+            if (level === 'All' && active) colorClass = 'bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)]';
 
             return (
               <label
                 key={level}
-                className={`flex items-center justify-between cursor-pointer p-2.5 rounded-lg transition-all ${
-                  active
-                    ? 'bg-[#1E293B] ring-1 ring-[#2DD4BF]/30 shadow-md'
-                    : 'hover:bg-[#1E293B]/60'
+                className={`flex items-center justify-between cursor-pointer p-3 rounded-xl transition-all duration-300 ${
+                  active ? 'bg-slate-800/80 border border-white/10 shadow-md' : 'bg-transparent border border-transparent hover:bg-slate-800/40'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -62,65 +62,49 @@ export default function Sidebar({ filters, setFilters }) {
                     name="risk"
                     checked={active}
                     onChange={() => handleChange('risk', level)}
-                    className="accent-[#2DD4BF] cursor-pointer"
+                    className="sr-only"
                   />
-
-                  <span
-                    className={`text-sm ${
-                      active ? 'text-white' : 'text-slate-400'
-                    }`}
-                  >
+                  <span className={`text-sm tracking-wide ${active ? 'text-white font-medium' : 'text-slate-400'}`}>
                     {level === 'All' ? 'All Levels' : `${level} Risk`}
                   </span>
                 </div>
-
-                <div
-                  className={`w-2.5 h-2.5 rounded-full ${color} ${
-                    active ? 'shadow-lg shadow-white/20 scale-110' : ''
-                  }`}
-                />
+                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${colorClass} ${active ? 'scale-125' : 'scale-100 opacity-60'}`} />
               </label>
             );
           })}
         </div>
       </div>
 
-      {/* ===== RAINFALL FILTER ===== */}
+      {/* Rainfall Slider */}
       <div>
-        <h3 className="text-[11px] font-semibold text-slate-400 tracking-widest mb-3 uppercase">
-          Max Rainfall
+        <h3 className="text-[10px] font-semibold text-slate-500 tracking-widest mb-3 uppercase">
+          Max Rainfall Threshold
         </h3>
-
-        <div className="bg-[#0F172A] p-4 rounded-xl border border-[#334155]">
-          <div className="flex justify-between text-xs text-slate-400 mb-4 items-center">
-            <span>0 mm</span>
-
-            <span className="font-semibold text-[#2DD4BF] bg-[#2DD4BF]/10 px-2 py-1 rounded-md">
+        <div className="bg-slate-950/30 p-5 rounded-2xl border border-white/5 shadow-inner flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-500 font-medium">0 mm</span>
+            <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-lg shadow-[0_0_10px_rgba(6,182,212,0.15)]">
               {filters.rainfall} mm
             </span>
           </div>
-
           <input
             type="range"
             min="0"
             max="400"
             value={filters.rainfall}
-            onChange={(e) =>
-              handleChange('rainfall', Number(e.target.value))
-            }
-            className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#2DD4BF]"
+            onChange={(e) => handleChange('rainfall', Number(e.target.value))}
+            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
           />
         </div>
       </div>
 
-      {/* ===== RESET BUTTON ===== */}
-      <div className="mt-auto">
+      {/* Reset */}
+      <div className="mt-auto pt-4">
         <button
-          onClick={() =>
-            setFilters({ search: '', risk: 'All', rainfall: 400 })
-          }
-          className="w-full bg-[#2DD4BF] text-black font-semibold py-3 rounded-xl hover:scale-105 hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] transition-all active:scale-[0.98]"
+          onClick={() => setFilters({ search: '', risk: 'All', rainfall: 400 })}
+          className="w-full group flex items-center justify-center gap-2 bg-slate-900/50 border border-white/10 text-slate-400 text-sm font-semibold py-3.5 rounded-xl hover:text-white hover:bg-slate-800 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)] transition-all duration-300 active:scale-[0.98]"
         >
+          <RotateCcw className="w-4 h-4 group-hover:-rotate-180 transition-transform duration-500" />
           Reset Filters
         </button>
       </div>

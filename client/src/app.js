@@ -63,30 +63,47 @@ function App() {
     : [];
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-hidden">
 
       {/* ===== HEADER ===== */}
-      <header className="h-16 flex-shrink-0 border-b bg-white z-10">
-        <Header />
-      </header>
+      <div className="h-[72px] flex-shrink-0 border-b border-white/5 bg-slate-950/50 backdrop-blur-xl z-20 shadow-sm sticky top-0">
+        <div className="h-full w-full mx-auto px-6 flex items-center">
+          <Header />
+        </div>
+      </div>
 
       {/* ===== MAIN LAYOUT ===== */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 p-4 gap-4 w-full max-w-[1920px] mx-auto">
 
         {/* ===== SIDEBAR ===== */}
-        <aside className="w-72 flex-shrink-0 overflow-y-auto border-r bg-white">
-          <Sidebar filters={filters} setFilters={setFilters} />
-        </aside>
+        <div className="w-80 flex-shrink-0 flex flex-col relative group z-10">
+          {/* Ambient Glow */}
+          <div className="absolute -inset-0.5 bg-gradient-to-b from-cyan-500/20 to-transparent rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-500"></div>
+          
+          {/* Glass Panel */}
+          <div className="relative h-full w-full rounded-2xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-y-auto flex flex-col">
+            <Sidebar filters={filters} setFilters={setFilters} />
+          </div>
+        </div>
 
-        {/* ===== MAP (CRITICAL FIX AREA) ===== */}
-        <main className="flex-1 min-h-0 relative">
+        {/* ===== MAP (CENTER) ===== */}
+        <div className="flex-1 min-w-0 min-h-0 relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-slate-900 flex flex-col z-0">
+          {/* Subtle inner vignette shadow for blending */}
+          <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_40px_rgba(0,0,0,0.6)] z-[400]"></div>
+          
           <MapView data={filteredData} />
-        </main>
+        </div>
 
         {/* ===== ANALYTICS ===== */}
-        <aside className="w-80 flex-shrink-0 overflow-y-auto border-l bg-white">
-          <AnalyticsPanel analytics={analytics} />
-        </aside>
+        <div className="w-80 flex-shrink-0 flex flex-col relative group z-10">
+          {/* Ambient Glow */}
+          <div className="absolute -inset-0.5 bg-gradient-to-b from-cyan-500/20 to-transparent rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-500"></div>
+          
+          {/* Glass Panel */}
+          <div className="relative h-full w-full rounded-2xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-y-auto flex flex-col">
+            <AnalyticsPanel analytics={analytics} />
+          </div>
+        </div>
 
       </div>
     </div>

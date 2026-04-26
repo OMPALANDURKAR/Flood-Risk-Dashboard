@@ -1,13 +1,12 @@
-// server/services/predictionService.js
-
 const { preprocess } = require('../utils/preprocess');
 const { calculateRiskScore } = require('../utils/riskScore');
 const { ruleScore } = require('../utils/ruleEngine');
 const { mlPrediction } = require('../utils/predictor');
+
 // ================================
 // MAIN PREDICTION FUNCTION
 // ================================
-exports.predict = async (input) => {
+exports.getPrediction = async (input) => {
   try {
     // ===== STEP 1: PREPROCESS =====
     const data = preprocess(input);
@@ -34,8 +33,6 @@ exports.predict = async (input) => {
       risk,
       probability: Number(finalScore.toFixed(2)),
       factors,
-
-      // 🔥 Optional debug (VERY useful for development)
       debug: {
         mlScore: Number(ml.toFixed(2)),
         ruleScore: rule,

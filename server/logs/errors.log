@@ -1,0 +1,32 @@
+
+2026-04-26T18:29:16.540Z
+GET /api/data
+Message: ENOENT: no such file or directory, open 'C:\Users\USER\Desktop\flood-risk-dashboard\server\data\processed\flood_data_with_district.json'
+Stack: Error: ENOENT: no such file or directory, open 'C:\Users\USER\Desktop\flood-risk-dashboard\server\data\processed\flood_data_with_district.json'
+    at Object.readFileSync (node:fs:441:20)
+    at exports.getAllData (C:\Users\USER\Desktop\flood-risk-dashboard\server\controllers\dataController.js:11:32)
+    at Layer.handleRequest (C:\Users\USER\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\USER\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (C:\Users\USER\node_modules\router\lib\route.js:117:3)
+    at handle (C:\Users\USER\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (C:\Users\USER\node_modules\router\lib\layer.js:152:17)
+    at C:\Users\USER\node_modules\router\index.js:295:15
+    at processParams (C:\Users\USER\node_modules\router\index.js:582:12)
+    at next (C:\Users\USER\node_modules\router\index.js:291:5)
+-----------------------------
+
+2026-04-26T18:30:32.640Z
+GET /api/data
+Message: Unexpected end of JSON input
+Stack: SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at exports.getAllData (C:\Users\USER\Desktop\flood-risk-dashboard\server\controllers\dataController.js:11:23)
+    at Layer.handleRequest (C:\Users\USER\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\USER\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (C:\Users\USER\node_modules\router\lib\route.js:117:3)
+    at handle (C:\Users\USER\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (C:\Users\USER\node_modules\router\lib\layer.js:152:17)
+    at C:\Users\USER\node_modules\router\index.js:295:15
+    at processParams (C:\Users\USER\node_modules\router\index.js:582:12)
+    at next (C:\Users\USER\node_modules\router\index.js:291:5)
+-----------------------------

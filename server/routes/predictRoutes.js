@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-// ✅ Controller import
-const predictController = require('../controllers/predictController');
+const { predictFlood } = require('../controllers/predictController');
+const validateInput = require('../middleware/validateInput');
 
-// ================================
-// ✅ INFO ROUTE (for browser testing)
-// ================================
+// GET
 router.get('/predict', (req, res) => {
   res.status(200).json({
     success: true,
@@ -14,9 +12,7 @@ router.get('/predict', (req, res) => {
   });
 });
 
-// ================================
-// ✅ MAIN PREDICTION ROUTE
-// ================================
-router.post('/predict', predictController.predictFloodRisk);
+// POST with validation
+router.post('/predict', validateInput, predictFlood);
 
 module.exports = router;

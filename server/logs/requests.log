@@ -7,3 +7,12 @@
 2026-04-26T18:29:16.545Z | GET /api/data | 500 | 10ms
 2026-04-26T18:30:32.652Z | GET /api/data | 500 | 19ms
 2026-04-26T18:44:30.872Z | GET /api/data?page=1&limit=50 | 200 | 178ms
+2026-04-27T18:05:49.911Z | GET /api/data?page=1&limit=50 | 200 | 378ms
+2026-04-27T18:06:15.283Z | GET /api/data?district=Nagpur | 200 | 340ms
+2026-04-27T18:07:04.486Z | GET /api/data?district=Nagpur&page=1&limit=20 | 200 | 185ms
+2026-04-27T18:18:09.203Z | GET /api/data?page=1&limit=50 | 200 | 183ms
+2026-04-27T18:19:51.587Z | GET /api/data?district=Nagpur | 200 | 37ms
+2026-04-27T18:19:55.264Z | GET /api/data?page=1&limit=50 | 200 | 3ms
+2026-04-27T18:20:00.492Z | GET /api/data?district=Nagpur&page=1&limit=20 | 200 | 3ms
+2026-04-27T18:20:59.879Z | GET /api/data?district=Nanded | 200 | 4ms
+2026-04-27T18:30:08.032Z | GET /api/analytics/district | 200 | 20ms

@@ -11,28 +11,26 @@ const outputPath = path.join(__dirname, '../data/processed/flood_data_with_distr
 const floodData = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 const geoData = JSON.parse(fs.readFileSync(geoPath, 'utf-8'));
 
-// 🔥 Precompute bounding boxes (BIG OPTIMIZATION)
-const districts = geoData.features.map((feature) => {
-  return {
-    feature,
-    bbox: turf.bbox(feature) // [minX, minY, maxX, maxY]
-  };
-});
+// Precompute bounding boxes
+const districts = geoData.features.map((feature) => ({
+  feature,
+  bbox: turf.bbox(feature)
+}));
 
-// Faster lookup
+// Get district
 const getDistrict = (lat, lon) => {
   const point = turf.point([lon, lat]);
 
   for (const d of districts) {
     const [minX, minY, maxX, maxY] = d.bbox;
 
-    // ⚡ Skip most polygons quickly
+    // Skip quickly using bbox
     if (lon < minX || lon > maxX || lat < minY || lat > maxY) continue;
 
     if (turf.booleanPointInPolygon(point, d.feature)) {
       return {
-        district: d.feature.properties.district || d.feature.properties.DISTRICT || null,
-        state: d.feature.properties.state || d.feature.properties.STATE || null
+        district: d.feature.properties.NAME_2 || null, // ✅ FIXED
+        state: d.feature.properties.NAME_1 || null     // ✅ FIXED
       };
     }
   }

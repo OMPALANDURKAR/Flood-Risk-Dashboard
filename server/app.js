@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 
 const predictRoutes = require('./routes/predictRoutes');
-const dataRoutes = require('./routes/dataRoutes'); // ✅ ADDED
+const dataRoutes = require('./routes/dataRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes'); // ✅ REQUIRED
 const { logError } = require('./utils/errorLogger');
 
 const fs = require('fs');
@@ -63,7 +64,8 @@ app.get('/health', (req, res) => {
 // ROUTES
 // =======================
 app.use('/api', predictRoutes);
-app.use('/api', dataRoutes); // ✅ ADDED
+app.use('/api', dataRoutes);
+app.use('/api', analyticsRoutes); // ✅ ADDED
 
 // =======================
 // 404 HANDLER (LAST)

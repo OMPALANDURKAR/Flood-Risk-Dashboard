@@ -75,34 +75,46 @@ export default function MapView({ district }) {
 
   // 🔥 HIGHLIGHT DISTRICT
   const highlightDistrict = (districtName) => {
-    if (!geoLayerRef.current) return;
+  if (!geoLayerRef.current) return;
 
-    geoLayerRef.current.eachLayer((layer) => {
-      const name = layer.feature.properties.NAME_2;
+  // 🔥 STEP 1 — RESET ALL DISTRICTS FIRST
+  geoLayerRef.current.eachLayer((layer) => {
+    geoLayerRef.current.resetStyle(layer);
+  });
 
-      if (
-        name &&
-        name.toLowerCase().includes(districtName.toLowerCase())
-      ) {
-        // RESET STYLE FIRST
-        geoLayerRef.current.resetStyle(layer);
+  let found = false;
 
-        // APPLY GLOW STYLE
-        layer.setStyle({
-          color: "#22c55e",
-          weight: 3,
-          fillColor: "#22c55e",
-          fillOpacity: 0.25,
-        });
+  // 🔥 STEP 2 — APPLY NEW HIGHLIGHT
+  geoLayerRef.current.eachLayer((layer) => {
+    const name = layer.feature.properties.NAME_2;
 
-        // ZOOM
-        mapInstance.current.fitBounds(layer.getBounds());
+    if (!name) return;
 
-        // POPUP
-        layer.bindPopup(`<b>${name}</b>`).openPopup();
-      }
-    });
-  };
+    const geoName = name.trim().toLowerCase();
+    const searchName = districtName.trim().toLowerCase();
+
+    if (geoName === searchName) {
+      found = true;
+
+      layer.setStyle({
+        color: "#22c55e",
+        weight: 4,
+        fillColor: "#22c55e",
+        fillOpacity: 0.3,
+      });
+
+      mapInstance.current.fitBounds(layer.getBounds(), {
+        padding: [20, 20],
+      });
+
+      layer.bindPopup(`<b>${name}</b>`).openPopup();
+    }
+  });
+
+  if (!found) {
+    console.warn("District not found:", districtName);
+  }
+};
 
   return (
     <div ref={mapRef} style={{ height: "100%", width: "100%" }} />

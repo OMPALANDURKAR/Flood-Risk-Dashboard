@@ -1,36 +1,33 @@
-export default function Sidebar() {
+import { useState } from "react";
+
+export default function Sidebar({ setDistrict }) {
+  const [search, setSearch] = useState("");
+
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+
+    // trigger search after typing
+    if (value.length > 2) {
+      setDistrict(value);
+    }
+  };
+
   return (
     <div className="space-y-4">
-
       <h2 className="text-sm font-bold">Filters</h2>
 
       <input
+        value={search}
+        onChange={handleSearch}
         placeholder="Search district..."
-        className="w-full p-2 bg-[#0f172a] border border-[#334155] rounded"
+        className="w-full p-2 rounded bg-[#0f172a] border border-[#334155]"
       />
 
-      <select className="w-full p-2 bg-[#0f172a] border border-[#334155] rounded">
-        <option>All States</option>
-      </select>
-
-      <select className="w-full p-2 bg-[#0f172a] border border-[#334155] rounded">
-        <option>All Risk</option>
-        <option>High</option>
-        <option>Medium</option>
-        <option>Low</option>
-      </select>
-
-      {/* Stats */}
       <div className="card">
         <p>Total Districts</p>
-        <h2 className="text-xl">10000</h2>
+        <h2>10000</h2>
       </div>
-
-      <div className="card">
-        <p>High Risk</p>
-        <h2 className="text-red-400 text-xl">1200</h2>
-      </div>
-
     </div>
   );
 }

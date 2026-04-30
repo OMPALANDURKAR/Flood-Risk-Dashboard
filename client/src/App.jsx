@@ -1,33 +1,28 @@
+import { useState } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import MapView from "./components/MapView";
 import AnalyticsPanel from "./components/AnalyticsPanel";
 
 function App() {
+  const [district, setDistrict] = useState("");
+
   return (
     <div className="app-shell">
-
-      {/* HEADER */}
       <Header />
 
-      {/* MAIN GRID */}
       <div className="main-grid">
-
-        {/* LEFT */}
         <div className="sidebar">
-          <Sidebar />
+          <Sidebar setDistrict={setDistrict} />
         </div>
 
-        {/* CENTER MAP */}
         <div>
-          <MapView />
+          <MapView district={district} />
         </div>
 
-        {/* RIGHT */}
         <div className="right-panel">
           <AnalyticsPanel />
         </div>
-
       </div>
     </div>
   );

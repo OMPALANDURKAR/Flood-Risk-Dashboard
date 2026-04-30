@@ -59,3 +59,35 @@ html, body, #root {
   border-radius: 10px;
   padding: 12px;
 }
+.card {
+  background: linear-gradient(135deg,#1e293b,#0f172a);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 12px;
+}
+options={{
+  plugins: {
+    legend: {
+      labels: { color: "#e2e8f0" }
+    }
+  },
+  scales: {
+    x: { ticks: { color: "#e2e8f0" } },
+    y: { ticks: { color: "#e2e8f0" } }
+  }
+}}
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+.main-grid {
+  height: calc(100vh - 70px);
+}
+.leaflet-interactive {
+  transition: all 0.3s ease;
+}
+
+.leaflet-interactive:hover {
+  filter: brightness(1.3);
+}

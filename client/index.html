@@ -2,12 +2,40 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+
+    <!-- Title -->
+    <title>Flood Monitoring Dashboard</title>
+
+    <!-- Fonts (Meridian Spec) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Improve text rendering -->
+    <style>
+      html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      body {
+        margin: 0;
+        background: #f8fafc; /* slate-50 */
+      }
+    </style>
   </head>
+
   <body>
     <div id="root"></div>
+
+    <!-- React Entry -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

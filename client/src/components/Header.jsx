@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { generateReport } from "../utils/reportGenerator";
 
-export default function Header() {
+export default function Header({ selectedDistrictData }) {
   const [time, setTime] = useState("");
 
   // ⏱ Live clock
@@ -19,17 +20,14 @@ export default function Header() {
     <motion.header
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      transition={{ duration: 0.35 }}
       className="
         w-full flex items-center justify-between
         bg-white/70 backdrop-blur-xl
         border border-slate-200/80
-        rounded-2xl
-        px-6 py-3
-        shadow-md
+        rounded-2xl px-6 py-3 shadow-md
       "
     >
-
       {/* ===== LEFT ===== */}
       <div className="flex items-center gap-4">
 
@@ -67,7 +65,7 @@ export default function Header() {
 
         {/* Status */}
         <div className="flex items-center gap-2 text-sm">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
           <span className="text-slate-600 font-medium">
             SYSTEM ONLINE
           </span>
@@ -78,39 +76,30 @@ export default function Header() {
           {time}
         </div>
 
-        {/* Buttons */}
-        <div className="flex items-center gap-2">
+        {/* Report Button */}
+        <motion.button
+          whileHover={{ y: -1 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => {
+            if (!selectedDistrictData || !selectedDistrictData.district) {
+              alert("Please select a district first");
+              return;
+            }
 
-          <motion.button
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.96 }}
-            className="
-              px-3 py-1.5 text-sm rounded-lg 
-              border border-slate-200 
-              bg-white hover:bg-slate-100 
-              text-slate-700
-              shadow-sm
-            "
-          >
-            Export CSV
-          </motion.button>
+            generateReport(selectedDistrictData);
+          }}
+          className="
+            px-4 py-2 text-sm rounded-lg 
+            bg-blue-600 text-white 
+            hover:bg-blue-700
+            shadow-md
+            transition-all
+          "
+        >
+          Report Summary
+        </motion.button>
 
-          <motion.button
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.96 }}
-            className="
-              px-3 py-1.5 text-sm rounded-lg 
-              bg-blue-600 text-white 
-              hover:bg-blue-700
-              shadow-sm
-            "
-          >
-            Export JSON
-          </motion.button>
-
-        </div>
       </div>
-
     </motion.header>
   );
 }

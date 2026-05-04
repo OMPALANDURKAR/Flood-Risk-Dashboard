@@ -1,13 +1,13 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 
-const predictRoutes = require('./routes/predictRoutes');
-const dataRoutes = require('./routes/dataRoutes');
-const analyticsRoutes = require('./routes/analyticsRoutes'); // ✅ REQUIRED
-const { logError } = require('./utils/errorLogger');
+const predictRoutes = require("./routes/predictRoutes");
+const dataRoutes = require("./routes/dataRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const { logError } = require("./utils/errorLogger");
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 
@@ -18,22 +18,29 @@ app.use(cors());
 app.use(express.json());
 
 // =======================
-// REQUEST + RESPONSE LOGGER
+// REQUEST LOGGER
 // =======================
 app.use((req, res, next) => {
   const start = Date.now();
 
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - start;
 
-    const log = `${new Date().toISOString()} | ${req.method} ${req.originalUrl} | ${res.statusCode} | ${duration}ms\n`;
+    const log = `${new Date().toISOString()} | ${req.method} ${
+      req.originalUrl
+    } | ${res.statusCode} | ${duration}ms\n`;
 
-    console.log(`➡️ ${req.method} ${req.originalUrl} | ${res.statusCode} | ${duration}ms`);
+    console.log(
+      `➡️ ${req.method} ${req.originalUrl} | ${res.statusCode} | ${duration}ms`
+    );
 
-    const logFilePath = path.join(__dirname, './logs/requests.log');
+    const logFilePath = path.join(__dirname, "logs", "requests.log");
+
+    // ✅ FIX: Ensure directory exists
+    fs.mkdirSync(path.dirname(logFilePath), { recursive: true });
 
     fs.appendFile(logFilePath, log, (err) => {
-      if (err) console.error('Log write error:', err);
+      if (err) console.error("Log write error:", err);
     });
   });
 
@@ -43,37 +50,39 @@ app.use((req, res, next) => {
 // =======================
 // ROOT ROUTE
 // =======================
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Backend is running'
+    message: "Backend is running",
   });
 });
 
 // =======================
 // HEALTH CHECK
 // =======================
-app.get('/health', (req, res) => {
+app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'FloodSentry API is running 🚀'
+    message: "FloodSentry API is running 🚀",
   });
 });
 
 // =======================
 // ROUTES
 // =======================
-app.use('/api', predictRoutes);
-app.use('/api', dataRoutes);
-app.use('/api', analyticsRoutes); // ✅ ADDED
+
+// ✅ IMPORTANT: Explicit routing (clean separation)
+app.use("/api/predict", predictRoutes);
+app.use("/api", dataRoutes);
+app.use("/api", analyticsRoutes);
 
 // =======================
-// 404 HANDLER (LAST)
+// 404 HANDLER
 // =======================
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route ${req.method} ${req.originalUrl} not found`
+    message: `Route ${req.method} ${req.originalUrl} not found`,
   });
 });
 
@@ -81,13 +90,13 @@ app.use((req, res) => {
 // GLOBAL ERROR HANDLER
 // =======================
 app.use((err, req, res, next) => {
-  console.error('❌ ERROR:', err.message);
+  console.error("❌ ERROR:", err.message);
 
   logError(err, req);
 
   res.status(err.statusCode || 500).json({
     success: false,
-    message: err.message || 'Internal Server Error'
+    message: err.message || "Internal Server Error",
   });
 });
 

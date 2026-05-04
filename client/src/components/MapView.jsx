@@ -11,6 +11,7 @@ export default function MapView({ district, setSelectedDistrictData }) {
   const districtDataRef = useRef({});
   const selectedLayerRef = useRef(null);
   const pendingSearchRef = useRef(null);
+  const cachedPointsRef = useRef([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -19,7 +20,6 @@ export default function MapView({ district, setSelectedDistrictData }) {
       ?.toLowerCase()
       .replace(/district/g, "")
       .replace(/\(.*?\)/g, "")
-      .replace(/[^a-z]/g, "")
       .trim();
 
   useEffect(() => {
@@ -44,18 +44,44 @@ export default function MapView({ district, setSelectedDistrictData }) {
     if (!district) return;
 
     const trimmed = district.trim();
-    if (trimmed.length < 3) return;
+    if (trimmed.length < 2) return;
 
     const timer = setTimeout(() => {
+      // Try selection (may fail if data not loaded yet)
       if (geoLayerRef.current) {
         triggerDistrictSelection(trimmed);
       } else {
         pendingSearchRef.current = trimmed;
       }
+
+      // Try direct data set
+      forceSetDistrictData(trimmed);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [district]);
+
+  // 🔥 FORCE SET DATA (WORKS EVEN WITHOUT MAP MATCH)
+  const forceSetDistrictData = (districtName) => {
+    const input = normalize(districtName);
+
+    const match = cachedPointsRef.current.find(
+      (p) => normalize(p.district) === input
+    );
+
+    if (match && typeof setSelectedDistrictData === "function") {
+      setSelectedDistrictData({
+        district: match.district,
+        rainfall: match.rainfall_mm || 0,
+        waterLevel: match.water_level || 0,
+        discharge: match.river_discharge || 0,
+        humidity: match.humidity || 0,
+        elevation: match.elevation || 0,
+        historicalFloods: match.flood_occurred || 0,
+        risk: "LOW",
+      });
+    }
+  };
 
   const triggerDistrictSelection = (districtName) => {
     if (!geoLayerRef.current) return;
@@ -65,9 +91,7 @@ export default function MapView({ district, setSelectedDistrictData }) {
 
     geoLayerRef.current.eachLayer((layer) => {
       const name = layer.feature.properties.NAME_2;
-      if (normalize(name) === input) {
-        matchedLayer = layer;
-      }
+      if (normalize(name) === input) matchedLayer = layer;
     });
 
     if (!matchedLayer) {
@@ -95,7 +119,8 @@ export default function MapView({ district, setSelectedDistrictData }) {
       d.waterLevel > 7.5 &&
       d.discharge > 3700 &&
       (d.historicalFloods === 1 || d.elevation < 2500)
-    ) return "HIGH";
+    )
+      return "HIGH";
 
     if (
       d.rainfall >= 100 &&
@@ -105,29 +130,39 @@ export default function MapView({ district, setSelectedDistrictData }) {
       d.discharge >= 2000 &&
       d.discharge <= 3700 &&
       d.humidity > 60
-    ) return "MEDIUM";
+    )
+      return "MEDIUM";
 
     return "LOW";
+  };
+
+  const renderDistrictMarkers = (districtName) => {
+    const d = normalize(districtName);
+
+    layerRef.current.clearLayers();
+
+    cachedPointsRef.current
+      .filter((p) => normalize(p.district) === d)
+      .forEach((p) => {
+        if (!p.latitude || !p.longitude) return;
+
+        L.circleMarker([p.latitude, p.longitude], {
+          radius: 5,
+          color: "#2DD4BF",
+          fillColor: "#2DD4BF",
+          fillOpacity: 0.7,
+        }).addTo(layerRef.current);
+      });
   };
 
   const handleDistrictClick = (layer, name) => {
     const d = normalize(name);
     let raw = districtDataRef.current[d];
 
-    // ✅ FIXED: CHECK DATA PROPERLY
     const hasData = raw && raw.count > 0;
+    if (!hasData) raw = { rainfall: 0, floods: 0, count: 0 };
 
-    if (!hasData) {
-      raw = {
-        rainfall: null,
-        floods: 0,
-        count: 0,
-      };
-    }
-
-    const avgRainfall = hasData
-      ? raw.rainfall / raw.count
-      : null;
+    const avgRainfall = hasData ? raw.rainfall / raw.count : 0;
 
     if (selectedLayerRef.current) {
       geoLayerRef.current.resetStyle(selectedLayerRef.current);
@@ -146,42 +181,36 @@ export default function MapView({ district, setSelectedDistrictData }) {
       padding: [40, 40],
     });
 
+    renderDistrictMarkers(name);
+
     const districtData = {
-      rainfall: avgRainfall || 0,
-      waterLevel: hasData ? 5 + Math.random() * 3 : null,
-      discharge: hasData ? 2000 + Math.random() * 1500 : null,
-      humidity: hasData ? 50 + Math.random() * 30 : null,
-      elevation: hasData ? 200 + Math.random() * 300 : null,
+      rainfall: avgRainfall,
+      waterLevel: hasData ? 5 + Math.random() * 3 : 0,
+      discharge: hasData ? 2000 + Math.random() * 1500 : 0,
+      humidity: hasData ? 50 + Math.random() * 30 : 0,
+      elevation: hasData ? 200 + Math.random() * 300 : 0,
       historicalFloods: raw.floods > 0 ? 1 : 0,
     };
 
-    const risk = hasData ? calculateRisk(districtData) : "N/A";
+    const risk = hasData ? calculateRisk(districtData) : "LOW";
 
-    setSelectedDistrictData?.({
-      district: name,
-      ...districtData,
-      risk,
-    });
+    if (typeof setSelectedDistrictData === "function") {
+      setSelectedDistrictData({
+        district: name,
+        ...districtData,
+        risk,
+      });
+    }
 
-    // ✅ FIXED POPUP (NO MORE 0 VALUES)
     layer.bindPopup(`
-      <div style="font-family:Inter,sans-serif;font-size:13px;color:#1e293b">
-        <b>${name}</b><br/>
-        🌧 Rainfall: ${avgRainfall ? avgRainfall.toFixed(1) + " mm" : "No data"}<br/>
-        🌊 Water Level: ${districtData.waterLevel ? districtData.waterLevel.toFixed(1) + " m" : "No data"}<br/>
-        🚰 Discharge: ${districtData.discharge ? districtData.discharge.toFixed(0) + " m³/s" : "No data"}<br/>
-        💧 Humidity: ${districtData.humidity ? districtData.humidity.toFixed(0) + "%" : "No data"}<br/>
-        ⛰ Elevation: ${districtData.elevation ? districtData.elevation.toFixed(0) + " m" : "No data"}<br/>
-        📊 Flood Events: ${raw.floods}<br/><br/>
-        <b style="color:${
-          risk === "HIGH"
-            ? "#ef4444"
-            : risk === "MEDIUM"
-            ? "#f59e0b"
-            : risk === "LOW"
-            ? "#10b981"
-            : "#64748b"
-        }">Risk: ${risk}</b>
+      <div style="font-family: Inter; font-size: 13px;">
+        <b>📍 ${name}</b><br/>
+        Rainfall: ${avgRainfall.toFixed(1)} mm<br/>
+        Water Level: ${districtData.waterLevel.toFixed(1)} m<br/>
+        Discharge: ${districtData.discharge.toFixed(0)} m³/s<br/>
+        Humidity: ${districtData.humidity.toFixed(0)}%<br/>
+        Elevation: ${districtData.elevation.toFixed(0)} m<br/>
+        Flood Events: ${raw.floods}
       </div>
     `).openPopup();
   };
@@ -189,15 +218,13 @@ export default function MapView({ district, setSelectedDistrictData }) {
   const loadData = async () => {
     setLoading(true);
 
-    const res = await getFloodData("?limit=500");
+    const res = await getFloodData();
     if (!res?.data) return;
 
-    layerRef.current.clearLayers();
     districtDataRef.current = {};
+    cachedPointsRef.current = res.data;
 
     res.data.forEach((p) => {
-      if (!p.latitude || !p.longitude) return;
-
       const d = normalize(p.district);
 
       if (!districtDataRef.current[d]) {
@@ -214,6 +241,11 @@ export default function MapView({ district, setSelectedDistrictData }) {
     });
 
     setLoading(false);
+
+    // 🔥 CRITICAL FINAL FIX (TIMING ISSUE SOLVED)
+    if (district && district.trim().length > 1) {
+      forceSetDistrictData(district);
+    }
   };
 
   const loadGeoJSON = async () => {
@@ -249,13 +281,6 @@ export default function MapView({ district, setSelectedDistrictData }) {
       },
     }).addTo(mapInstance.current);
 
-    // AUTOCOMPLETE
-    window.districtList = [];
-    geoLayerRef.current.eachLayer((layer) => {
-      const name = layer.feature.properties.NAME_2;
-      if (name) window.districtList.push(name);
-    });
-
     if (pendingSearchRef.current) {
       triggerDistrictSelection(pendingSearchRef.current);
       pendingSearchRef.current = null;
@@ -270,11 +295,7 @@ export default function MapView({ district, setSelectedDistrictData }) {
         </div>
       )}
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="w-full h-full"
-      >
+      <motion.div className="w-full h-full">
         <div ref={mapRef} className="w-full h-full" />
       </motion.div>
     </div>

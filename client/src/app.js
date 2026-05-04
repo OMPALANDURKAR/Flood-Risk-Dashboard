@@ -23,28 +23,25 @@ function App() {
 
   const [filters, setFilters] = useState({
     search: "",
-    risk: "All",
-    rainfall: 400,
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // ✅ SINGLE SOURCE OF TRUTH
+  const [selectedDistrictData, setSelectedDistrictData] = useState(null);
 
   // =========================
   // FETCH DATA
   // =========================
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const fetchData = async () => {
     try {
       const dataRes = await API.get("/");
       const statRes = await API.get("/analytics");
 
-      const floodArray = Array.isArray(dataRes.data)
-        ? dataRes.data
-        : dataRes.data?.data || [];
-
-      const analyticsData =
-        statRes.data?.data || statRes.data || {};
+      const floodArray = dataRes.data?.data || [];
+      const analyticsData = statRes.data?.data || {};
 
       setFloodData(floodArray);
       setAnalytics(analyticsData);
@@ -55,60 +52,70 @@ function App() {
   };
 
   // =========================
-  // FILTER DATA
+  // FILTER FOR SIDEBAR ONLY
   // =========================
-  const filteredData = Array.isArray(floodData)
-    ? floodData.filter((d) =>
-        (d.land_cover || "")
-          .toLowerCase()
-          .includes(filters.search.toLowerCase()) &&
-        (filters.risk === "All" || d.riskLevel === filters.risk) &&
-        Number(d.rainfall_mm) <= filters.rainfall
-      )
-    : [];
+  const filteredData = floodData.filter((d) =>
+    (d.district || "")
+      .toLowerCase()
+      .includes(filters.search.toLowerCase())
+  );
 
   return (
-    <div className="
-      h-screen w-screen flex flex-col
-      bg-slate-50 text-slate-800
-      font-sans overflow-hidden
-    ">
+    <div className="h-screen w-screen flex flex-col bg-slate-50 text-slate-800">
 
       {/* ===== HEADER ===== */}
-      <div className="
-        h-[72px] flex-shrink-0 
-        sticky top-0 z-20
-      ">
-        <Header />
+      <div className="h-[72px] sticky top-0 z-20">
+        <Header selectedDistrictData={selectedDistrictData} />
       </div>
 
-      {/* ===== MAIN GRID ===== */}
-      <div className="
-        flex-1 min-h-0 
-        grid grid-cols-[320px_1fr_320px] 
-        gap-4 p-4
-      ">
+      {/* ===== MAIN ===== */}
+      <div className="flex-1 grid grid-cols-[320px_1fr_320px] gap-4 p-4">
 
-        {/* ===== SIDEBAR ===== */}
-        <div className="min-h-0 overflow-hidden">
-          <Sidebar
-            setDistrict={(val) =>
-              setFilters((prev) => ({ ...prev, search: val }))
-            }
-          />
-        </div>
+        {/* SIDEBAR */}
+        <Sidebar
+          setDistrict={(val) =>
+            setFilters((prev) => ({ ...prev, search: val }))
+          }
+          selectedDistrictData={selectedDistrictData}
+          filteredData={filteredData}
+        />
 
-        {/* ===== MAP ===== */}
-        <div className="min-h-0 overflow-hidden">
-          <MapView data={filteredData} />
-        </div>
+        {/* MAP */}
+        <MapView
+          district={filters.search}
+          setSelectedDistrictData={setSelectedDistrictData}
+        />
 
-        {/* ===== ANALYTICS ===== */}
-        <div className="min-h-0 overflow-hidden">
-          <AnalyticsPanel analytics={analytics} />
-        </div>
-
+        {/* ANALYTICS */}
+        <AnalyticsPanel analytics={analytics} />
       </div>
+
+      {/* OPTIONAL: keep only if still using html2canvas (you removed it ideally) */}
+      {/* REMOVE if using direct PDF generator */}
+      {selectedDistrictData && (
+        <div
+          id="report-content"
+          style={{
+            position: "fixed",
+            top: "-9999px",
+            left: "-9999px",
+            width: "800px",
+            padding: "24px",
+            background: "white",
+          }}
+        >
+          <h1>Flood Risk Report</h1>
+          <h2>{selectedDistrictData.district}</h2>
+
+          <p>Rainfall: {selectedDistrictData.rainfall.toFixed(1)} mm</p>
+          <p>Water Level: {selectedDistrictData.waterLevel.toFixed(1)} m</p>
+          <p>Discharge: {selectedDistrictData.discharge.toFixed(0)} m³/s</p>
+          <p>Humidity: {selectedDistrictData.humidity.toFixed(0)}%</p>
+          <p>Elevation: {selectedDistrictData.elevation.toFixed(0)} m</p>
+          <p>Flood History: {selectedDistrictData.historicalFloods}</p>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -1,154 +1,109 @@
 @import "tailwindcss";
+/* ============================= */
+/* ===== LAYOUT ENHANCEMENT ==== */
+/* ============================= */
 
-/* ============================= */
-/* ===== GLOBAL RESET ========= */
-/* ============================= */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* ============================= */
-/* ===== ROOT THEME ============ */
-/* ============================= */
-:root {
-  --bg: #f8fafc;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-
-  --border: #e2e8f0;
-  --surface: rgba(255, 255, 255, 0.8);
-
-  --primary: #2563eb;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #f43f5e;
-}
-
-/* ============================= */
-/* ===== BASE ================== */
-/* ============================= */
-html,
-body,
-#root {
-  height: 100%;
-  background: var(--bg);
-  color: var(--text-primary);
-  font-family: 'Inter', sans-serif;
-
-  /* 🔥 GLOBAL SMOOTHNESS */
-  scroll-behavior: smooth;
-}
-
-/* ============================= */
-/* ===== GLOBAL INTERACTION ==== */
-/* ============================= */
-* {
-  transition: all 0.2s ease;
-}
-
-/* ============================= */
-/* ===== MAP =================== */
-/* ============================= */
-#map {
-  width: 100%;
-  height: 100%;
-}
-
-/* Smooth marker hover feel */
-.leaflet-interactive {
-  transition: all 0.2s ease;
-}
-
-.leaflet-interactive:hover {
-  filter: brightness(1.2);
-}
-
-/* ============================= */
-/* ===== GLASS PANEL ========== */
-/* ============================= */
+/* Smooth glass depth */
 .glass-panel {
-  background: var(--surface);
-  backdrop-filter: blur(18px);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 /* ============================= */
-/* ===== CARD SYSTEM ========== */
+/* ===== SIDEBAR HEADER ======== */
 /* ============================= */
-.tech-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #f1f5f9;
-  border-radius: 12px;
-  padding: 16px;
 
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+.sidebar-title {
+  font-size: 20px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sidebar-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ============================= */
+/* ===== TECH CARD (UPGRADE) === */
+/* ============================= */
+
+.tech-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: 14px;
+  padding: 14px;
+
+  box-shadow: 
+    0 8px 22px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
   transition: all 0.25s ease;
 }
 
 .tech-card:hover {
-  border-color: #bfdbfe;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  border-color: #93c5fd;
+  box-shadow: 
+    0 14px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px) scale(1.01);
 }
 
 /* ============================= */
-/* ===== INPUT SYSTEM ========= */
+/* ===== INPUT FIELD (MODERN) == */
 /* ============================= */
+
 .input-field {
   width: 100%;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: rgba(241, 245, 249, 0.6);
-  color: var(--text-primary);
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
+  padding: 10px 12px;
+  border-radius: 10px;
 
-.input-field::placeholder {
-  color: #94a3b8;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(248, 250, 252, 0.8);
+
+  font-size: 14px;
 }
 
 .input-field:focus {
-  outline: none;
-  border-color: var(--primary);
+  border-color: #2563eb;
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 /* ============================= */
-/* ===== LEAFLET FIXES ======== */
+/* ===== MICRO WIDGET ========= */
 /* ============================= */
-.leaflet-container {
-  font-family: 'Inter', sans-serif;
-}
 
-/* Popup (Meridian refined) */
-.leaflet-popup-content-wrapper {
-  background: #ffffff;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-}
+.stat-widget {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 
-.leaflet-popup-tip {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 14px;
+  padding: 12px 14px;
+
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.05);
 }
 
 /* ============================= */
-/* ===== BUTTON FEEDBACK ====== */
+/* ===== BUTTON UPGRADE ======= */
 /* ============================= */
+
 button {
-  transition: all 0.2s ease;
+  border-radius: 10px;
+  font-weight: 600;
 }
 
 button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 button:active {
@@ -156,17 +111,45 @@ button:active {
 }
 
 /* ============================= */
-/* ===== SCROLLBAR (PREMIUM) === */
+/* ===== SMOOTH UI MOTION ===== */
 /* ============================= */
+
+.glass-panel,
+.tech-card,
+.stat-widget {
+  transition: all 0.25s ease;
+}
+
+/* ============================= */
+/* ===== MAP OVERLAY FIX ====== */
+/* ============================= */
+
+main {
+  backdrop-filter: blur(2px);
+}
+
+/* ============================= */
+/* ===== PREMIUM SCROLL ======= */
+/* ============================= */
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5f5;
+  background: rgba(148, 163, 184, 0.6);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(100, 116, 139, 0.8);
+}
+/* Stronger glass depth */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }

@@ -25,8 +25,8 @@ ChartJS.register(
 
 ChartJS.defaults.color = "#64748b";
 
-export default function AnalyticsPanel() {
-  const [data, setData] = useState({});
+export default function AnalyticsPanel({ setSelectedDistrict }) {
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function AnalyticsPanel() {
     try {
       setLoading(true);
       const res = await getAnalytics();
-      setData(res.data || {});
+      setAnalytics(res.data);
     } catch (err) {
       console.error("Analytics fetch error", err);
     } finally {
@@ -45,23 +45,44 @@ export default function AnalyticsPanel() {
     }
   };
 
-  const districts = Object.keys(data);
+  // =========================
+  // SAFE LOADING
+  // =========================
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse h-40 bg-slate-200 rounded"></div>
+      </div>
+    );
+  }
 
-  let total = 0;
-  let floods = 0;
-  let high = 0;
-  let medium = 0;
-  let low = 0;
+  if (!analytics || !analytics.distribution || !analytics.topDistricts) {
+    return (
+      <div className="p-6 text-sm text-slate-400">
+        Loading analytics...
+      </div>
+    );
+  }
 
-  districts.forEach((d) => {
-    const item = data[d] || {};
-    total += item.total || 0;
-    floods += item.floods || 0;
+  // =========================
+  // SAFE DATA
+  // =========================
+  const total = analytics.total || 0;
+  const floods = analytics.floods || 0;
+  const distribution = analytics.distribution || { high: 0, medium: 0, low: 0 };
+  const topDistricts = analytics.topDistricts || [];
+  const driver = analytics.driver || { type: "N/A", percent: 0 };
 
-    if (item.floods > 5) high++;
-    else if (item.floods > 2) medium++;
-    else low++;
-  });
+  // =========================
+  // INSIGHT
+  // =========================
+  const dominant =
+    distribution.low > distribution.medium &&
+    distribution.low > distribution.high
+      ? "Most districts are currently stable"
+      : distribution.high > distribution.medium
+      ? "High-risk districts require attention"
+      : "Moderate flood risk across regions";
 
   // =========================
   // CHART DATA
@@ -70,154 +91,139 @@ export default function AnalyticsPanel() {
     labels: ["High", "Medium", "Low"],
     datasets: [
       {
-        data: [high, medium, low],
-        backgroundColor: ["#f43f5e", "#f59e0b", "#10b981"],
+        data: [
+          distribution.high,
+          distribution.medium,
+          distribution.low,
+        ],
+        backgroundColor: ["#ef4444", "#f59e0b", "#10b981"],
         borderWidth: 0,
       },
     ],
   };
 
-  const topDistricts = Object.entries(data)
-    .sort((a, b) => (b[1]?.floods || 0) - (a[1]?.floods || 0))
-    .slice(0, 5);
-
   const barData = {
-    labels: topDistricts.map((d) => d[0]),
+    labels: topDistricts.length
+      ? topDistricts.map((d) => d.name)
+      : [],
     datasets: [
       {
-        label: "Flood Events",
-        data: topDistricts.map((d) => d[1]?.floods || 0),
+        label: "Risk Score",
+        data: topDistricts.map((d) => d.value),
         backgroundColor: "#3b82f6",
         borderRadius: 6,
       },
     ],
   };
 
-  const barOptions = {
-    plugins: {
-      legend: {
-        labels: { color: "#64748b" },
-      },
-    },
-    scales: {
-      x: {
-        ticks: { color: "#64748b", font: { size: 10 } },
-        grid: { display: false },
-      },
-      y: {
-        ticks: { color: "#64748b", font: { size: 10 } },
-        grid: { color: "#f1f5f9" },
-      },
-    },
-  };
-
   return (
     <motion.aside
       initial={{ opacity: 0, x: 10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35 }}
-      className="
-        h-full flex flex-col gap-7 p-6
-        bg-white/80 backdrop-blur-xl
-        border border-slate-200
-        rounded-2xl
-        shadow-[0_10px_30px_rgba(0,0,0,0.05)]
-      "
+      className="h-full flex flex-col gap-6 p-6 bg-white/80 border rounded-2xl"
     >
-
-      {/* ===== HEADER ===== */}
+      {/* HEADER */}
       <div>
-        <p className="text-xs font-bold tracking-widest uppercase text-slate-400">
+        <p className="text-xs font-bold uppercase text-slate-400">
           Insights
         </p>
-        <h2 className="text-lg font-semibold text-slate-800">
+        <h2 className="text-lg font-semibold">
           Analytics Dashboard
         </h2>
       </div>
 
-      {/* ===== LOADING ===== */}
-      {loading ? (
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-slate-200 rounded w-1/2"></div>
-          <div className="h-28 bg-slate-200 rounded"></div>
-          <div className="h-28 bg-slate-200 rounded"></div>
+      {/* ================= KPI ================= */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card title="Total Records" value={total} color="text-blue-600" />
+        <Card title="Flood Events" value={floods} color="text-red-500" />
+        <Card title="High Risk Zones" value={distribution.high} color="text-red-500" />
+        <Card
+          title="Avg Risk Score"
+          value={Math.round(
+            (distribution.high * 3 +
+              distribution.medium * 2 +
+              distribution.low) /
+              (total || 1)
+          )}
+          color="text-amber-500"
+        />
+      </div>
+
+      {/* ================= ALERT ================= */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+        ⚠️ {dominant}
+      </div>
+
+      {/* ================= RISK SECTION ================= */}
+      <div className="grid grid-cols-2 gap-4">
+
+        {/* DONUT */}
+        <div className="bg-white p-4 rounded-xl shadow">
+          <p className="text-sm font-semibold mb-3">
+            Risk Distribution
+          </p>
+          <Doughnut data={doughnutData} />
         </div>
-      ) : (
-        <>
-          {/* ===== SUMMARY ===== */}
-          <div className="grid grid-cols-2 gap-5">
 
-            {[
-              { label: "Total Records", value: total, color: "text-blue-600" },
-              { label: "Flood Events", value: floods, color: "text-rose-600" },
-            ].map((card, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -3 }}
-                className="
-                  bg-white/90 border border-slate-100
-                  rounded-xl p-5
-                  shadow-[0_6px_18px_rgba(0,0,0,0.06)]
-                  hover:border-blue-200
-                  hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)]
-                  transition-all duration-300
-                "
-              >
-                <p className="text-xs text-slate-400 mb-1">
-                  {card.label}
-                </p>
-                <h3 className={`text-3xl font-bold ${card.color}`}>
-                  {card.value}
-                </h3>
-              </motion.div>
-            ))}
+        {/* INSIGHT PANEL */}
+        <div className="bg-white p-4 rounded-xl shadow flex flex-col gap-3">
+          <p className="text-sm font-semibold">
+            Risk Insights
+          </p>
 
+          <div className="text-sm text-slate-600">
+            {dominant}
           </div>
 
-          {/* ===== DONUT ===== */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="
-              bg-white/90 border border-slate-100
-              rounded-xl p-5
-              shadow-[0_6px_18px_rgba(0,0,0,0.06)]
-              hover:border-blue-200
-              hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)]
-              transition-all duration-300
-            "
-          >
-            <p className="text-xs text-slate-400 mb-4">
-              Risk Distribution
-            </p>
-            <Doughnut data={doughnutData} />
-          </motion.div>
+          <div className="text-xs space-y-1">
+            <p>🔴 High: {distribution.high}</p>
+            <p>🟡 Medium: {distribution.medium}</p>
+            <p>🟢 Low: {distribution.low}</p>
+          </div>
 
-          {/* ===== BAR ===== */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="
-              bg-white/90 border border-slate-100
-              rounded-xl p-5
-              shadow-[0_6px_18px_rgba(0,0,0,0.06)]
-              hover:border-blue-200
-              hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)]
-              transition-all duration-300
-            "
-          >
-            <p className="text-xs text-slate-400 mb-4">
-              Top Flood Districts
-            </p>
-            <Bar data={barData} options={barOptions} />
-          </motion.div>
-        </>
-      )}
+          <div className="bg-blue-50 rounded-lg p-2 text-xs mt-2">
+            🧠 Primary Driver:{" "}
+            <span className="font-semibold">
+              {driver.type} ({driver.percent}%)
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ================= BAR ================= */}
+      <div className="bg-white p-4 rounded-xl shadow">
+        <p className="text-sm font-semibold mb-3">
+          Top Risk Districts
+        </p>
+
+        <Bar
+          data={barData}
+          options={{
+            onClick: (evt, elements) => {
+              if (elements.length > 0 && setSelectedDistrict) {
+                const index = elements[0].index;
+                const district = topDistricts[index]?.name;
+                if (district) setSelectedDistrict(district);
+              }
+            }
+          }}
+        />
+      </div>
+
     </motion.aside>
+  );
+}
+
+// ================= CARD =================
+function Card({ title, value, color }) {
+  return (
+    <motion.div
+      whileHover={{ scale: 1.03 }}
+      className="bg-white p-4 rounded-xl shadow"
+    >
+      <p className="text-xs text-slate-500">{title}</p>
+      <h2 className={`text-xl font-bold ${color}`}>{value}</h2>
+    </motion.div>
   );
 }

@@ -1,13 +1,13 @@
-import app from './app.js';
+import app from "./app.js";
 
 const PORT = process.env.PORT || 5000;
-const ENV = process.env.NODE_ENV || 'development';
+const ENV = process.env.NODE_ENV || "development";
 
 /**
  * 🔥 Handle uncaught exceptions (sync errors)
  */
-process.on('uncaughtException', (err) => {
-  console.error('\n❌ UNCAUGHT EXCEPTION!');
+process.on("uncaughtException", (err) => {
+  console.error("\n❌ UNCAUGHT EXCEPTION!");
   console.error(`Message: ${err.message}`);
   console.error(`Stack: ${err.stack}`);
   process.exit(1);
@@ -17,20 +17,20 @@ process.on('uncaughtException', (err) => {
  * 🚀 Start Server
  */
 const server = app.listen(PORT, () => {
-  console.log('\n==============================');
-  console.log('🚀 FloodSentry Backend Started');
-  console.log('==============================');
+  console.log("\n==============================");
+  console.log("🚀 FloodSentry Backend Started");
+  console.log("==============================");
   console.log(`🌐 Environment : ${ENV}`);
   console.log(`📡 Server URL  : http://localhost:${PORT}`);
-  console.log(`🔥 Status      : RUNNING`);
-  console.log('==============================\n');
+  console.log("🔥 Status      : RUNNING");
+  console.log("==============================\n");
 });
 
 /**
  * 🔥 Handle unhandled promise rejections (async errors)
  */
-process.on('unhandledRejection', (err) => {
-  console.error('\n❌ UNHANDLED REJECTION!');
+process.on("unhandledRejection", (err) => {
+  console.error("\n❌ UNHANDLED REJECTION!");
   console.error(`Message: ${err.message}`);
   console.error(`Stack: ${err.stack}`);
 
@@ -40,19 +40,15 @@ process.on('unhandledRejection', (err) => {
 });
 
 /**
- * 🛑 Graceful shutdown (important for production / deployment)
+ * 🛑 Graceful shutdown (production-safe)
  */
-process.on('SIGTERM', () => {
-  console.log('\n⚠️ SIGTERM RECEIVED. Shutting down gracefully...');
+const shutdown = (signal) => {
+  console.log(`\n⚠️ ${signal} RECEIVED. Shutting down gracefully...`);
   server.close(() => {
-    console.log('💤 Process terminated.');
-  });
-});
-
-process.on('SIGINT', () => {
-  console.log('\n⚠️ SIGINT RECEIVED (Ctrl+C). Shutting down...');
-  server.close(() => {
-    console.log('💤 Server stopped.');
+    console.log("💤 Server stopped.");
     process.exit(0);
   });
-});
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

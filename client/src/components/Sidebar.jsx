@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { predictFlood } from "../api/predict";
 import { motion, AnimatePresence } from "framer-motion";
+import { getFloodData } from "../api/data";
 
 export default function Sidebar({ setDistrict, selectedDistrictData }) {
   const [search, setSearch] = useState("");
-  const [prediction, setPrediction] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  const [districtList, setDistrictList] = useState([]);
 
-  // ✅ SAME NORMALIZER (CRITICAL)
   const normalize = (str) =>
     str
       ?.toLowerCase()
@@ -18,7 +16,29 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
       .trim();
 
   // =========================
-  // 🔍 AUTOCOMPLETE FROM MAP
+  // FETCH DISTRICTS FROM BACKEND
+  // =========================
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      try {
+        const res = await getFloodData();
+        const data = res.data || [];
+
+        const unique = [
+          ...new Set(data.map((item) => item.district).filter(Boolean)),
+        ];
+
+        setDistrictList(unique);
+      } catch (err) {
+        console.error("Failed to fetch districts", err);
+      }
+    };
+
+    fetchDistricts();
+  }, []);
+
+  // =========================
+  // AUTOCOMPLETE
   // =========================
   useEffect(() => {
     const val = normalize(search);
@@ -28,154 +48,170 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
       return;
     }
 
-    const allDistricts = window.districtList || [];
-
-    const filtered = allDistricts
+    const filtered = districtList
       .filter((d) => normalize(d).includes(val))
       .slice(0, 6);
 
     setSuggestions(filtered);
-  }, [search]);
+  }, [search, districtList]);
 
-  // =========================
-  // SEARCH INPUT
-  // =========================
   const handleSearch = (e) => {
     setSearch(e.target.value);
   };
 
-  // =========================
-  // 🔥 DEBOUNCED SEARCH
-  // =========================
   useEffect(() => {
     const trimmed = search.trim();
 
-    if (trimmed.length < 3) {
+    if (trimmed.length < 2) {
       setDistrict("");
       return;
     }
 
     const timer = setTimeout(() => {
-      setDistrict(normalize(trimmed));
+      setDistrict((trimmed));
     }, 300);
 
     return () => clearTimeout(timer);
   }, [search]);
 
-  // =========================
-  // SELECT FROM DROPDOWN
-  // =========================
   const selectDistrict = (name) => {
     setSearch(name);
-    setDistrict(normalize(name));
+    setDistrict((name));
     setSuggestions([]);
   };
 
   // =========================
-  // PREDICTION
+  // RISK %
   // =========================
-  useEffect(() => {
-    if (!selectedDistrictData) {
-      setPrediction(null);
-      return;
+  const getRiskMeta = (data) => {
+    const { rainfall, waterLevel, discharge } = data;
+
+    const rainScore = Math.min((rainfall / 300) * 100, 100);
+    const waterScore = Math.min((waterLevel / 10) * 100, 100);
+    const dischargeScore = Math.min((discharge / 5000) * 100, 100);
+
+    const avgScore = (rainScore + waterScore + dischargeScore) / 3;
+
+    let label = "LOW";
+    let color = "#10b981";
+
+    if (avgScore > 70) {
+      label = "HIGH";
+      color = "#ef4444";
+    } else if (avgScore > 40) {
+      label = "MEDIUM";
+      color = "#f59e0b";
     }
 
-    const runPrediction = async () => {
-      try {
-        setLoading(true);
-
-        const input = {
-          rainfall: Number(selectedDistrictData.rainfall?.toFixed(2)),
-          waterLevel: selectedDistrictData.waterLevel,
-          discharge: selectedDistrictData.discharge,
-          humidity: selectedDistrictData.humidity,
-          elevation: selectedDistrictData.elevation,
-          historicalFloods: selectedDistrictData.historicalFloods,
-        };
-
-        const res = await predictFlood(input);
-        setPrediction(res?.success ? res : null);
-      } catch {
-        setPrediction(null);
-      } finally {
-        setLoading(false);
-      }
+    return {
+      percent: Math.round(avgScore),
+      color,
+      label,
     };
+  };
 
-    runPrediction();
-  }, [selectedDistrictData]);
+  // =========================
+  // PRIMARY DRIVER
+  // =========================
+  const getPrimaryDriver = (data) => {
+    const { rainfall, waterLevel, discharge } = data;
+
+    const scores = [
+      { key: "Rainfall", value: rainfall },
+      { key: "Water Level", value: waterLevel * 30 },
+      { key: "Discharge", value: discharge / 50 },
+    ];
+
+    scores.sort((a, b) => b.value - a.value);
+    return scores[0].key;
+  };
+
+  // =========================
+  // INSIGHTS
+  // =========================
+  const generateInsights = (data) => {
+    const insights = [];
+    const { rainfall, waterLevel, discharge, humidity, elevation, historicalFloods } = data;
+
+    if (rainfall > 220) insights.push("🌧 Heavy rainfall detected");
+    else if (rainfall >= 100) insights.push("🌦 Moderate rainfall");
+
+    if (waterLevel > 7.5) insights.push("🌊 Critical water level");
+    else if (waterLevel >= 4) insights.push("🌊 Elevated water level");
+
+    if (discharge > 3700) insights.push("🚰 Extreme discharge");
+    else if (discharge >= 2000) insights.push("🚰 High discharge");
+
+    if (historicalFloods === 1) insights.push("📊 Flood-prone area");
+
+    if (humidity > 60) insights.push("💧 High soil saturation");
+
+    if (elevation < 300) insights.push("⛰ Low elevation risk");
+
+    if (insights.length === 0) insights.push("✅ Stable conditions");
+
+    return insights;
+  };
+
+  // =========================
+  // INFO PANEL
+  // =========================
+  const InfoPanel = () => (
+    <div className="space-y-5">
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <h3 className="font-semibold text-slate-800 text-sm mb-1">
+          🌊 Flood Risk Overview
+        </h3>
+        <p className="text-xs text-slate-600">
+          Risk is calculated using environmental and hydrological factors.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <InfoItem title="Rainfall" desc="Heavy rain → runoff" />
+        <InfoItem title="Water Level" desc="River overflow risk" />
+        <InfoItem title="Discharge" desc="Flow intensity" />
+        <InfoItem title="Humidity" desc="Soil saturation" />
+        <InfoItem title="Elevation" desc="Low land floods faster" />
+        <InfoItem title="History" desc="Past flood patterns" />
+      </div>
+
+      <div className="bg-slate-100 rounded-xl p-3 text-xs text-slate-600">
+        💡 Search a district to view flood analysis
+      </div>
+    </div>
+  );
 
   return (
     <motion.aside
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35 }}
-      className="
-        h-full flex flex-col gap-8 p-6
-        bg-white/80 backdrop-blur-xl
-        border border-slate-200
-        rounded-2xl
-        shadow-[0_10px_30px_rgba(0,0,0,0.05)]
-      "
+      className="h-full flex flex-col gap-6 p-6 bg-white/80 border rounded-2xl"
     >
-
-      {/* ===== SEARCH ===== */}
+      {/* SEARCH */}
       <div className="space-y-3 relative">
+        <h2 className="text-lg font-semibold">District Finder</h2>
 
-        <div>
-          <p className="text-xs font-bold tracking-widest uppercase text-slate-400">
-            Search
-          </p>
-          <h2 className="text-lg font-semibold text-slate-800">
-            District Finder
-          </h2>
-        </div>
+        <input
+          value={search}
+          onChange={handleSearch}
+          placeholder="Search district..."
+          className="w-full px-4 py-2 rounded-xl border focus:ring-2 focus:ring-blue-200"
+        />
 
-        <div className="relative">
-          <input
-            value={search}
-            onChange={handleSearch}
-            placeholder="Search district..."
-            className="
-              w-full px-4 py-2.5 rounded-xl
-              bg-white/80
-              border border-slate-200
-              text-slate-800 placeholder-slate-400
-              focus:outline-none
-              focus:ring-2 focus:ring-blue-500/20
-              focus:border-blue-500
-              shadow-sm
-              transition-all duration-200
-            "
-          />
-
-          <span className="absolute right-3 top-2.5 text-slate-400">
-            🔍
-          </span>
-        </div>
-
-        {/* ===== AUTOCOMPLETE ===== */}
+        {/* DROPDOWN */}
         <AnimatePresence>
           {suggestions.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              className="
-                absolute top-full left-0 right-0 mt-2
-                bg-white border border-slate-200
-                rounded-xl shadow-lg z-50 overflow-hidden
-              "
+              className="absolute top-full left-0 right-0 bg-white border shadow-xl rounded-xl z-50 overflow-hidden"
             >
               {suggestions.map((item, i) => (
                 <div
                   key={i}
                   onClick={() => selectDistrict(item)}
-                  className="
-                    px-4 py-2 text-sm cursor-pointer
-                    hover:bg-blue-50 hover:text-blue-600
-                    transition
-                  "
+                  className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50"
                 >
                   {item}
                 </div>
@@ -183,66 +219,82 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
 
-      <div className="border-t border-slate-200"></div>
-
-      {/* ===== PREDICTION ===== */}
-      <div className="space-y-3">
-        <p className="text-xs font-bold tracking-widest uppercase text-slate-400">
-          AI Prediction
-        </p>
-
-        <div className="
-          bg-white/90 border border-slate-100
-          rounded-xl p-5
-          shadow-[0_6px_18px_rgba(0,0,0,0.06)]
-        ">
-
-          {loading && (
-            <div className="animate-pulse space-y-3">
-              <div className="h-8 w-1/2 bg-slate-200 rounded"></div>
-              <div className="h-4 w-1/3 bg-slate-200 rounded"></div>
+      {/* CONTENT */}
+      <div className="bg-white p-5 rounded-xl shadow space-y-4 flex-1 overflow-y-auto">
+        {!selectedDistrictData ? (
+          <InfoPanel />
+        ) : (
+          <>
+            <div className="font-semibold text-sm">
+              📍 {selectedDistrictData.district}
             </div>
-          )}
 
-          {!loading && prediction && (
-            <div className="space-y-3">
-              <h2
-                className={`text-5xl font-bold ${
-                  prediction.risk === "HIGH"
-                    ? "text-rose-600"
-                    : prediction.risk === "MEDIUM"
-                    ? "text-amber-500"
-                    : "text-emerald-600"
-                }`}
-              >
-                {prediction.risk}
-              </h2>
+            {(() => {
+              const { percent, color, label } =
+                getRiskMeta(selectedDistrictData);
 
-              {prediction.factors && (
-                <div className="space-y-1">
-                  {prediction.factors.map((f, i) => (
-                    <p key={i} className="text-xs text-slate-500">
-                      • {f}
-                    </p>
-                  ))}
-                </div>
-              )}
+              return (
+                <>
+                  <div className="w-full bg-slate-200 h-2 rounded">
+                    <div
+                      className="h-2 rounded"
+                      style={{
+                        width: `${percent}%`,
+                        backgroundColor: color,
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ color }} className="text-xs text-right">
+                    {label} ({percent}%)
+                  </div>
+                </>
+              );
+            })()}
+
+            <div className="grid grid-cols-2 gap-3">
+              <Stat label="Rainfall" value={`${selectedDistrictData.rainfall.toFixed(1)} mm`} />
+              <Stat label="Water Level" value={`${selectedDistrictData.waterLevel.toFixed(1)} m`} />
+              <Stat label="Discharge" value={selectedDistrictData.discharge.toFixed(0)} />
+              <Stat label="Flood Events" value={selectedDistrictData.historicalFloods} />
             </div>
-          )}
 
-          {!loading && !prediction && (
-            <div className="text-sm text-slate-400 text-center py-6">
-              <p className="mb-1">📍 No district selected</p>
-              <p className="text-xs">Click on map to analyze flood risk</p>
+            <div className="bg-blue-50 rounded-lg px-3 py-2 text-xs">
+              🧠 Driver: {getPrimaryDriver(selectedDistrictData)}
             </div>
-          )}
 
-        </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Why this risk?</p>
+              {generateInsights(selectedDistrictData).map((item, i) => (
+                <p key={i} className="text-xs text-slate-600">
+                  • {item}
+                </p>
+              ))}
+            </div>
+          </>
+        )}
       </div>
-
     </motion.aside>
+  );
+}
+
+// ================= COMPONENTS =================
+function Stat({ label, value }) {
+  return (
+    <div className="bg-slate-100 rounded-lg p-3 text-xs">
+      <div className="text-slate-500">{label}</div>
+      <div className="font-semibold text-slate-800">{value}</div>
+    </div>
+  );
+}
+
+function InfoItem({ title, desc }) {
+  return (
+    <div className="bg-slate-100 hover:bg-slate-200 transition rounded-lg p-3">
+      <div className="font-semibold text-slate-800 text-xs">{title}</div>
+      <div className="text-slate-500 text-xs">{desc}</div>
+    </div>
   );
 }

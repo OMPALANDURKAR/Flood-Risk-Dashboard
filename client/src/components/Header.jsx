@@ -28,6 +28,7 @@ export default function Header({ selectedDistrictData }) {
         rounded-2xl px-6 py-3 shadow-md
       "
     >
+
       {/* ===== LEFT ===== */}
       <div className="flex items-center gap-4">
 
@@ -57,6 +58,13 @@ export default function Header({ selectedDistrictData }) {
           <p className="text-xs text-slate-500">
             Real-time monitoring platform
           </p>
+
+          {/* ✅ FIXED DEBUG */}
+          {selectedDistrictData?.district && (
+            <p className="text-xs text-emerald-600 font-medium mt-1">
+              Selected: {selectedDistrictData.district}
+            </p>
+          )}
         </div>
       </div>
 
@@ -81,7 +89,9 @@ export default function Header({ selectedDistrictData }) {
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.96 }}
           onClick={() => {
-            if (!selectedDistrictData || !selectedDistrictData.district) {
+            console.log("HEADER RECEIVED:", selectedDistrictData);
+
+            if (!selectedDistrictData?.district) {
               alert("Please select a district first");
               return;
             }

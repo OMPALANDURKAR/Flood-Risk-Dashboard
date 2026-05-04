@@ -40,8 +40,12 @@ function App() {
       const dataRes = await API.get("/");
       const statRes = await API.get("/analytics");
 
-      const floodArray = dataRes.data?.data || [];
-      const analyticsData = statRes.data?.data || {};
+      const floodArray = Array.isArray(dataRes.data)
+        ? dataRes.data
+        : dataRes.data?.data || [];
+
+      const analyticsData =
+        statRes.data?.data || statRes.data || {};
 
       setFloodData(floodArray);
       setAnalytics(analyticsData);
@@ -54,11 +58,16 @@ function App() {
   // =========================
   // FILTER FOR SIDEBAR ONLY
   // =========================
-  const filteredData = floodData.filter((d) =>
-    (d.district || "")
-      .toLowerCase()
-      .includes(filters.search.toLowerCase())
-  );
+  const filteredData = Array.isArray(floodData)
+    ? floodData.filter((d) =>
+        (d.district || "")
+          .toLowerCase()
+          .includes(filters.search.toLowerCase())
+      )
+    : [];
+
+  // 🔍 DEBUG
+  console.log("APP STATE:", selectedDistrictData);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-50 text-slate-800">
@@ -80,19 +89,21 @@ function App() {
           filteredData={filteredData}
         />
 
-        {/* MAP */}
+        {/* 🔥 FIXED MAP CONNECTION */}
         <MapView
           district={filters.search}
-          setSelectedDistrictData={setSelectedDistrictData}
+          setSelectedDistrictData={(data) => {
+            console.log("FROM MAP:", data);
+            setSelectedDistrictData({ ...data }); // force re-render
+          }}
         />
 
         {/* ANALYTICS */}
         <AnalyticsPanel analytics={analytics} />
       </div>
 
-      {/* OPTIONAL: keep only if still using html2canvas (you removed it ideally) */}
-      {/* REMOVE if using direct PDF generator */}
-      {selectedDistrictData && (
+      {/* REPORT CONTENT */}
+      {selectedDistrictData?.district && (
         <div
           id="report-content"
           style={{
@@ -107,11 +118,11 @@ function App() {
           <h1>Flood Risk Report</h1>
           <h2>{selectedDistrictData.district}</h2>
 
-          <p>Rainfall: {selectedDistrictData.rainfall.toFixed(1)} mm</p>
-          <p>Water Level: {selectedDistrictData.waterLevel.toFixed(1)} m</p>
-          <p>Discharge: {selectedDistrictData.discharge.toFixed(0)} m³/s</p>
-          <p>Humidity: {selectedDistrictData.humidity.toFixed(0)}%</p>
-          <p>Elevation: {selectedDistrictData.elevation.toFixed(0)} m</p>
+          <p>Rainfall: {selectedDistrictData.rainfall?.toFixed(1)} mm</p>
+          <p>Water Level: {selectedDistrictData.waterLevel?.toFixed(1)} m</p>
+          <p>Discharge: {selectedDistrictData.discharge?.toFixed(0)} m³/s</p>
+          <p>Humidity: {selectedDistrictData.humidity?.toFixed(0)}%</p>
+          <p>Elevation: {selectedDistrictData.elevation?.toFixed(0)} m</p>
           <p>Flood History: {selectedDistrictData.historicalFloods}</p>
         </div>
       )}

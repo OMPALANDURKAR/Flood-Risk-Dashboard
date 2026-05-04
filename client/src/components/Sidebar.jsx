@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { predictFlood } from "../api/predict";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Sidebar({ setDistrict, selectedDistrictData }) {
   const [search, setSearch] = useState("");
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
 
-  // 🔥 SAME NORMALIZER AS MAPVIEW (CRITICAL)
+  // ✅ SAME NORMALIZER (CRITICAL)
   const normalize = (str) =>
     str
       ?.toLowerCase()
@@ -17,6 +18,26 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
       .trim();
 
   // =========================
+  // 🔍 AUTOCOMPLETE FROM MAP
+  // =========================
+  useEffect(() => {
+    const val = normalize(search);
+
+    if (!val) {
+      setSuggestions([]);
+      return;
+    }
+
+    const allDistricts = window.districtList || [];
+
+    const filtered = allDistricts
+      .filter((d) => normalize(d).includes(val))
+      .slice(0, 6);
+
+    setSuggestions(filtered);
+  }, [search]);
+
+  // =========================
   // SEARCH INPUT
   // =========================
   const handleSearch = (e) => {
@@ -24,7 +45,7 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
   };
 
   // =========================
-  // 🔥 DEBOUNCED + CLEAN SEARCH (FIXED)
+  // 🔥 DEBOUNCED SEARCH
   // =========================
   useEffect(() => {
     const trimmed = search.trim();
@@ -35,12 +56,20 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
     }
 
     const timer = setTimeout(() => {
-      const clean = normalize(trimmed);
-      setDistrict(clean); // 🔥 SEND CLEAN VALUE
-    }, 350);
+      setDistrict(normalize(trimmed));
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [search]);
+
+  // =========================
+  // SELECT FROM DROPDOWN
+  // =========================
+  const selectDistrict = (name) => {
+    setSearch(name);
+    setDistrict(normalize(name));
+    setSuggestions([]);
+  };
 
   // =========================
   // PREDICTION
@@ -66,8 +95,7 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
 
         const res = await predictFlood(input);
         setPrediction(res?.success ? res : null);
-      } catch (err) {
-        console.error("Prediction error:", err);
+      } catch {
         setPrediction(null);
       } finally {
         setLoading(false);
@@ -92,7 +120,8 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
     >
 
       {/* ===== SEARCH ===== */}
-      <div className="space-y-3">
+      <div className="space-y-3 relative">
+
         <div>
           <p className="text-xs font-bold tracking-widest uppercase text-slate-400">
             Search
@@ -102,22 +131,59 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
           </h2>
         </div>
 
-        <input
-          value={search}
-          onChange={handleSearch}
-          placeholder="Type district name..."
-          className="
-            w-full px-3 py-2 rounded-lg
-            bg-slate-100/60 focus:bg-white
-            border border-slate-200
-            text-slate-800 placeholder-slate-400
-            focus:outline-none
-            focus:ring-2 focus:ring-blue-500/20
-            focus:border-blue-500
-            focus:shadow-[0_0_0_3px_rgba(37,99,235,0.08)]
-            transition-all duration-200
-          "
-        />
+        <div className="relative">
+          <input
+            value={search}
+            onChange={handleSearch}
+            placeholder="Search district..."
+            className="
+              w-full px-4 py-2.5 rounded-xl
+              bg-white/80
+              border border-slate-200
+              text-slate-800 placeholder-slate-400
+              focus:outline-none
+              focus:ring-2 focus:ring-blue-500/20
+              focus:border-blue-500
+              shadow-sm
+              transition-all duration-200
+            "
+          />
+
+          <span className="absolute right-3 top-2.5 text-slate-400">
+            🔍
+          </span>
+        </div>
+
+        {/* ===== AUTOCOMPLETE ===== */}
+        <AnimatePresence>
+          {suggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              className="
+                absolute top-full left-0 right-0 mt-2
+                bg-white border border-slate-200
+                rounded-xl shadow-lg z-50 overflow-hidden
+              "
+            >
+              {suggestions.map((item, i) => (
+                <div
+                  key={i}
+                  onClick={() => selectDistrict(item)}
+                  className="
+                    px-4 py-2 text-sm cursor-pointer
+                    hover:bg-blue-50 hover:text-blue-600
+                    transition
+                  "
+                >
+                  {item}
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
 
       <div className="border-t border-slate-200"></div>
@@ -134,20 +200,6 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
           shadow-[0_6px_18px_rgba(0,0,0,0.06)]
         ">
 
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-3">
-            <p className="text-sm text-slate-500">
-              Flood Risk
-            </p>
-
-            {loading && (
-              <span className="text-xs text-blue-500 animate-pulse">
-                analyzing...
-              </span>
-            )}
-          </div>
-
-          {/* LOADING */}
           {loading && (
             <div className="animate-pulse space-y-3">
               <div className="h-8 w-1/2 bg-slate-200 rounded"></div>
@@ -155,11 +207,10 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
             </div>
           )}
 
-          {/* RESULT */}
           {!loading && prediction && (
             <div className="space-y-3">
               <h2
-                className={`text-5xl font-bold tracking-tight ${
+                className={`text-5xl font-bold ${
                   prediction.risk === "HIGH"
                     ? "text-rose-600"
                     : prediction.risk === "MEDIUM"
@@ -182,7 +233,6 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
             </div>
           )}
 
-          {/* EMPTY */}
           {!loading && !prediction && (
             <div className="text-sm text-slate-400 text-center py-6">
               <p className="mb-1">📍 No district selected</p>

@@ -14,18 +14,14 @@ export default function MapView({ district, setSelectedDistrictData }) {
 
   const [loading, setLoading] = useState(true);
 
-  // 🔥 FINAL NORMALIZER (VERY IMPORTANT FIX)
   const normalize = (str) =>
     str
       ?.toLowerCase()
       .replace(/district/g, "")
       .replace(/\(.*?\)/g, "")
-      .replace(/[^a-z]/g, "") // 🔥 removes spaces, symbols, mismatch
+      .replace(/[^a-z]/g, "")
       .trim();
 
-  // =========================
-  // INIT MAP
-  // =========================
   useEffect(() => {
     if (mapInstance.current) return;
 
@@ -44,9 +40,6 @@ export default function MapView({ district, setSelectedDistrictData }) {
     loadData();
   }, []);
 
-  // =========================
-  // 🔥 SEARCH FIX (DEBOUNCED + SAFE)
-  // =========================
   useEffect(() => {
     if (!district) return;
 
@@ -64,34 +57,25 @@ export default function MapView({ district, setSelectedDistrictData }) {
     return () => clearTimeout(timer);
   }, [district]);
 
-  // =========================
-  // 🔥 DISTRICT MATCH ENGINE (FIXED)
-  // =========================
   const triggerDistrictSelection = (districtName) => {
     if (!geoLayerRef.current) return;
 
     const input = normalize(districtName);
     let matchedLayer = null;
 
-    // STRICT MATCH
     geoLayerRef.current.eachLayer((layer) => {
       const name = layer.feature.properties.NAME_2;
-
       if (normalize(name) === input) {
         matchedLayer = layer;
       }
     });
 
-    // 🔥 SMART FALLBACK (CRITICAL FIX)
     if (!matchedLayer) {
       geoLayerRef.current.eachLayer((layer) => {
         const name = layer.feature.properties.NAME_2;
         const geoName = normalize(name);
 
-        if (
-          geoName.includes(input) ||
-          input.includes(geoName)
-        ) {
+        if (geoName.includes(input) || input.includes(geoName)) {
           matchedLayer = layer;
         }
       });
@@ -102,14 +86,9 @@ export default function MapView({ district, setSelectedDistrictData }) {
         matchedLayer,
         matchedLayer.feature.properties.NAME_2
       );
-    } else {
-      console.warn("❌ District not found:", districtName);
     }
   };
 
-  // =========================
-  // RISK ENGINE
-  // =========================
   const calculateRisk = (d) => {
     if (
       d.rainfall > 220 &&
@@ -131,26 +110,29 @@ export default function MapView({ district, setSelectedDistrictData }) {
     return "LOW";
   };
 
-  // =========================
-  // CLICK HANDLER
-  // =========================
   const handleDistrictClick = (layer, name) => {
     const d = normalize(name);
-    const raw = districtDataRef.current[d];
+    let raw = districtDataRef.current[d];
 
-    if (!raw) {
-      console.warn("❌ No data for:", name);
-      return;
+    // ✅ FIXED: CHECK DATA PROPERLY
+    const hasData = raw && raw.count > 0;
+
+    if (!hasData) {
+      raw = {
+        rainfall: null,
+        floods: 0,
+        count: 0,
+      };
     }
 
-    const avgRainfall = raw.rainfall / raw.count;
+    const avgRainfall = hasData
+      ? raw.rainfall / raw.count
+      : null;
 
-    // RESET OLD
     if (selectedLayerRef.current) {
       geoLayerRef.current.resetStyle(selectedLayerRef.current);
     }
 
-    // APPLY HIGHLIGHT
     layer.setStyle({
       color: "#2563eb",
       weight: 3,
@@ -165,15 +147,15 @@ export default function MapView({ district, setSelectedDistrictData }) {
     });
 
     const districtData = {
-      rainfall: avgRainfall,
-      waterLevel: 5 + Math.random() * 3,
-      discharge: 2000 + Math.random() * 1500,
-      humidity: 50 + Math.random() * 30,
-      elevation: 200 + Math.random() * 300,
+      rainfall: avgRainfall || 0,
+      waterLevel: hasData ? 5 + Math.random() * 3 : null,
+      discharge: hasData ? 2000 + Math.random() * 1500 : null,
+      humidity: hasData ? 50 + Math.random() * 30 : null,
+      elevation: hasData ? 200 + Math.random() * 300 : null,
       historicalFloods: raw.floods > 0 ? 1 : 0,
     };
 
-    const risk = calculateRisk(districtData);
+    const risk = hasData ? calculateRisk(districtData) : "N/A";
 
     setSelectedDistrictData?.({
       district: name,
@@ -181,29 +163,29 @@ export default function MapView({ district, setSelectedDistrictData }) {
       risk,
     });
 
+    // ✅ FIXED POPUP (NO MORE 0 VALUES)
     layer.bindPopup(`
       <div style="font-family:Inter,sans-serif;font-size:13px;color:#1e293b">
         <b>${name}</b><br/>
-        🌧 Rainfall: ${avgRainfall.toFixed(1)} mm<br/>
-        🌊 Water Level: ${districtData.waterLevel.toFixed(1)} m<br/>
-        🚰 Discharge: ${districtData.discharge.toFixed(0)} m³/s<br/>
-        💧 Humidity: ${districtData.humidity.toFixed(0)}%<br/>
-        ⛰ Elevation: ${districtData.elevation.toFixed(0)} m<br/>
+        🌧 Rainfall: ${avgRainfall ? avgRainfall.toFixed(1) + " mm" : "No data"}<br/>
+        🌊 Water Level: ${districtData.waterLevel ? districtData.waterLevel.toFixed(1) + " m" : "No data"}<br/>
+        🚰 Discharge: ${districtData.discharge ? districtData.discharge.toFixed(0) + " m³/s" : "No data"}<br/>
+        💧 Humidity: ${districtData.humidity ? districtData.humidity.toFixed(0) + "%" : "No data"}<br/>
+        ⛰ Elevation: ${districtData.elevation ? districtData.elevation.toFixed(0) + " m" : "No data"}<br/>
         📊 Flood Events: ${raw.floods}<br/><br/>
         <b style="color:${
           risk === "HIGH"
             ? "#ef4444"
             : risk === "MEDIUM"
             ? "#f59e0b"
-            : "#10b981"
+            : risk === "LOW"
+            ? "#10b981"
+            : "#64748b"
         }">Risk: ${risk}</b>
       </div>
     `).openPopup();
   };
 
-  // =========================
-  // LOAD DATA
-  // =========================
   const loadData = async () => {
     setLoading(true);
 
@@ -229,20 +211,11 @@ export default function MapView({ district, setSelectedDistrictData }) {
       districtDataRef.current[d].rainfall += p.rainfall_mm || 0;
       districtDataRef.current[d].floods += p.flood_occurred || 0;
       districtDataRef.current[d].count++;
-
-      L.circleMarker([p.latitude, p.longitude], {
-        radius: 4,
-        color: "#0ea5e9",
-        fillOpacity: 0.4,
-      }).addTo(layerRef.current);
     });
 
     setLoading(false);
   };
 
-  // =========================
-  // GEOJSON
-  // =========================
   const loadGeoJSON = async () => {
     const res = await fetch("/india_districts.geojson");
     const geojson = await res.json();
@@ -253,7 +226,6 @@ export default function MapView({ district, setSelectedDistrictData }) {
         weight: 1,
         fillOpacity: 0,
       },
-
       onEachFeature: (feature, layer) => {
         const name = feature.properties.NAME_2;
 
@@ -277,7 +249,13 @@ export default function MapView({ district, setSelectedDistrictData }) {
       },
     }).addTo(mapInstance.current);
 
-    // 🔥 IMPORTANT: trigger pending search AFTER geo loads
+    // AUTOCOMPLETE
+    window.districtList = [];
+    geoLayerRef.current.eachLayer((layer) => {
+      const name = layer.feature.properties.NAME_2;
+      if (name) window.districtList.push(name);
+    });
+
     if (pendingSearchRef.current) {
       triggerDistrictSelection(pendingSearchRef.current);
       pendingSearchRef.current = null;

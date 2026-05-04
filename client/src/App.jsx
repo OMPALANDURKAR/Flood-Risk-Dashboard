@@ -5,8 +5,23 @@ import MapView from "./components/MapView";
 import AnalyticsPanel from "./components/AnalyticsPanel";
 
 function App() {
-  const [district, setDistrict] = useState("");
+  // 🔍 Search input (text-based)
+  const [districtQuery, setDistrictQuery] = useState("");
+
+  // 📊 Selected district (from map click)
   const [selectedDistrictData, setSelectedDistrictData] = useState(null);
+
+  // =========================
+  // HANDLE SEARCH
+  // =========================
+  const handleDistrictSearch = (value) => {
+    setDistrictQuery(value);
+
+    // 🔥 Reset selected data when typing new search
+    if (value.length > 0) {
+      setSelectedDistrictData(null);
+    }
+  };
 
   return (
     <div className="
@@ -23,18 +38,19 @@ function App() {
       {/* ===== MAIN CONTAINER ===== */}
       <div className="flex-1 min-h-0 px-6 pb-6">
 
-        {/* CENTERED CONTENT WRAPPER */}
+        {/* ===== GRID WRAPPER ===== */}
         <div className="
           h-full w-full mx-auto
           max-w-[1800px]
-          grid grid-cols-[300px_1fr_340px]
+          grid 
+          grid-cols-[280px_1fr_320px]
           gap-6
         ">
 
           {/* ===== SIDEBAR ===== */}
           <div className="min-h-0 overflow-hidden">
             <Sidebar
-              setDistrict={setDistrict}
+              setDistrict={handleDistrictSearch}
               selectedDistrictData={selectedDistrictData}
             />
           </div>
@@ -42,7 +58,7 @@ function App() {
           {/* ===== MAP ===== */}
           <div className="min-h-0 overflow-hidden">
             <MapView
-              district={district}
+              district={districtQuery}
               setSelectedDistrictData={setSelectedDistrictData}
             />
           </div>

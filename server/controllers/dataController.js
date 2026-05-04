@@ -37,7 +37,7 @@ exports.getAllData = (req, res, next) => {
     // PAGINATION
     // =======================
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit) || 10000;
 
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;

@@ -7,17 +7,46 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    setSearch(value);
+  // 🔥 SAME NORMALIZER AS MAPVIEW (CRITICAL)
+  const normalize = (str) =>
+    str
+      ?.toLowerCase()
+      .replace(/district/g, "")
+      .replace(/\(.*?\)/g, "")
+      .replace(/[^a-z]/g, "")
+      .trim();
 
-    if (value.trim().length > 2) {
-      setDistrict(value.trim());
-    }
+  // =========================
+  // SEARCH INPUT
+  // =========================
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
   };
 
+  // =========================
+  // 🔥 DEBOUNCED + CLEAN SEARCH (FIXED)
+  // =========================
   useEffect(() => {
-    if (!selectedDistrictData || selectedDistrictData.count === 0) {
+    const trimmed = search.trim();
+
+    if (trimmed.length < 3) {
+      setDistrict("");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const clean = normalize(trimmed);
+      setDistrict(clean); // 🔥 SEND CLEAN VALUE
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // =========================
+  // PREDICTION
+  // =========================
+  useEffect(() => {
+    if (!selectedDistrictData) {
       setPrediction(null);
       return;
     }
@@ -26,13 +55,13 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
       try {
         setLoading(true);
 
-        const avgRainfall =
-          selectedDistrictData.rainfall / selectedDistrictData.count;
-
         const input = {
-          rainfall: Number(avgRainfall.toFixed(2)),
-          riverLevel: 6,
-          soilMoisture: 50,
+          rainfall: Number(selectedDistrictData.rainfall?.toFixed(2)),
+          waterLevel: selectedDistrictData.waterLevel,
+          discharge: selectedDistrictData.discharge,
+          humidity: selectedDistrictData.humidity,
+          elevation: selectedDistrictData.elevation,
+          historicalFloods: selectedDistrictData.historicalFloods,
         };
 
         const res = await predictFlood(input);
@@ -63,12 +92,7 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
     >
 
       {/* ===== SEARCH ===== */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="space-y-3"
-      >
+      <div className="space-y-3">
         <div>
           <p className="text-xs font-bold tracking-widest uppercase text-slate-400">
             Search
@@ -94,34 +118,21 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
             transition-all duration-200
           "
         />
-      </motion.div>
+      </div>
 
-      {/* ===== DIVIDER ===== */}
       <div className="border-t border-slate-200"></div>
 
       {/* ===== PREDICTION ===== */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="space-y-3"
-      >
+      <div className="space-y-3">
         <p className="text-xs font-bold tracking-widest uppercase text-slate-400">
           AI Prediction
         </p>
 
-        {/* CARD */}
-        <motion.div
-          whileHover={{ y: -3 }}
-          className="
-            bg-white/90 border border-slate-100
-            rounded-xl p-5
-            shadow-[0_6px_18px_rgba(0,0,0,0.06)]
-            transition-all duration-300
-            hover:border-blue-200
-            hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)]
-          "
-        >
+        <div className="
+          bg-white/90 border border-slate-100
+          rounded-xl p-5
+          shadow-[0_6px_18px_rgba(0,0,0,0.06)]
+        ">
 
           {/* HEADER */}
           <div className="flex justify-between items-center mb-3">
@@ -146,7 +157,7 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
 
           {/* RESULT */}
           {!loading && prediction && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h2
                 className={`text-5xl font-bold tracking-tight ${
                   prediction.risk === "HIGH"
@@ -159,23 +170,28 @@ export default function Sidebar({ setDistrict, selectedDistrictData }) {
                 {prediction.risk}
               </h2>
 
-              <p className="text-sm text-slate-500">
-                Probability:{" "}
-                <span className="font-semibold text-slate-800">
-                  {prediction.probability}
-                </span>
-              </p>
+              {prediction.factors && (
+                <div className="space-y-1">
+                  {prediction.factors.map((f, i) => (
+                    <p key={i} className="text-xs text-slate-500">
+                      • {f}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {/* EMPTY */}
           {!loading && !prediction && (
-            <p className="text-sm text-slate-400">
-              Select a district to view prediction
-            </p>
+            <div className="text-sm text-slate-400 text-center py-6">
+              <p className="mb-1">📍 No district selected</p>
+              <p className="text-xs">Click on map to analyze flood risk</p>
+            </div>
           )}
-        </motion.div>
-      </motion.div>
+
+        </div>
+      </div>
 
     </motion.aside>
   );
